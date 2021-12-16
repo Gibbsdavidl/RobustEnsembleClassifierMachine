@@ -1,0 +1,19 @@
+Package: RobustEnsembleClassifierMachine
+Title: An ensemble of XGBoosts and data transformations.
+Version: 0.0.1
+Authors@R: 
+    person(given = "David",
+           family = "Gibbs",
+           role = c("aut", "cre"),
+           email = "dgibbs@systemsbiology.org",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: An R package for classification.
+License: Apache-2.0
+Encoding: UTF-8
+LazyData: true
+Depends:
+  xgboost,
+  plotROC,
+  stringr,
+  parallel
+RoxygenNote: 6.1.1
