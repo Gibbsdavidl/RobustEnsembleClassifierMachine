@@ -68,10 +68,28 @@ Recm <- R6Class("Recm",
                       cat(paste0("Hello, my name is ", self$name, ".\n"))
                     },
                     
-                    read_data = function(filename, sep, header) {
+                    
+                    
+                    
+                    read_data = function(filename, sep, header, label_name) {
                       self$file_name <- filename
                       self$data <- data.table::fread(file=filename, sep=sep, header=header)
                     },
+                    
+                    
+                    
+                    data_setup = function(label_name, drop_list){
+                      self$label <- self$data[[label_name]]
+                      self$data[, (label_name):=NULL]
+                      self$data[, (drop_list):=NULL]
+                    },
+                    
+                    
+                    
+                    binarize_label = function(x) {
+                      self$label <- ifelse(ann$label == x, yes=1, no=0)
+                    },
+                    
                     
                     
                     #' @description Tests to see if \code{x} is contained in the Set.
@@ -110,24 +128,45 @@ Recm <- R6Class("Recm",
                     #' s2$contains(Tuple$new(2,1))
                     #' c(Tuple$new(2,1), Tuple$new(1,7), 2) %inset% s2
                     build_ensemble = function(name, 
+                                              mode,
                                               size, 
                                               data, 
                                               label, 
                                               max_depth, 
                                               eta, 
                                               nrounds,
-                                              nthread, 
+                                              nthreads, 
                                               objective) {
                       self$ensbl <- Ensbl$new(name, 
+                                              mode,
                                               size, 
                                               data, 
                                               label, 
                                               max_depth, 
                                               eta, 
                                               nrounds,
-                                              nthread, 
+                                              nthreads,
                                               objective)
+                    },
+                    
+                    train_models = function(perc) {
+                      self$ensbl$train_models(perc)
+                    },
+                    
+                    
+                    
+                    predict_ensemble = function(data, label, combine_function, threshold) {
+                      if (all(class(data)[1] == 'matrix') == FALSE) {
+                        data <- as.matrix(data)
+                      }
+                      if (all(class(label) == 'numeric') == FALSE) {
+                        label <- as.numeric(label)
+                      }
+                      
+                      self$ensbl$ensemble_predict(data, label, combine_function, threshold)
                     }
+                    
+                    
                   ) # end public
       )
 
