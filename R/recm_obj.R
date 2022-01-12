@@ -6,68 +6,46 @@ library(data.table)
 
 source('R/enbl_obj.R')
 
-#' @name Set
-#' @title Mathematical Set
-#' @description A general Set object for mathematical sets. This also serves as the parent class to
-#' intervals, tuples, and fuzzy variants.
-#' @family sets
+#' @name Recm
+#' @title Robust ensemble classifier machine (Recm)
+#' @description An object that holds data and an ensemble of classifiers
 #'
 #' @details
-#' Mathematical sets can loosely be thought of as a collection of objects of any kind. The Set class
-#' is used for sets of finite elements, for infinite sets use [Interval]. These can be
-#' expanded for fuzzy logic by using [FuzzySet]s. Elements in a set cannot be duplicated and ordering
-#' of elements does not matter, [Tuple]s can be used if duplicates or ordering are required.
+#' The ensemble is composed of XGBoost classifiers trained on binarized labels.
 #'
 #' @examples
-#' # Set of integers
-#' Set$new(1:5)
-#'
-#' # Set of multiple types
-#' Set$new("a", 5, Set$new(1))
-#'
-#' # Each Set has properties and traits
-#' s <- Set$new(1, 2, 3)
-#' s$traits
-#' s$properties
-#'
-#' # Elements cannot be duplicated
-#' Set$new(2, 2) == Set$new(2)
-#'
-#' # Ordering does not matter
-#' Set$new(1, 2) == Set$new(2, 1)
+#' # New object
+#' ann <- Recm$new("Ann")
 #' @export
 Recm <- R6Class("Recm",
                   public = list(
                     name = NULL,
                     file_name = NULL,
                     data = NULL,
+                    data_split = NULL,
+                    train_data = NULL,
+                    train_label = NULL,
+                    test_data = NULL,
+                    test_label = NULL,
                     label = NULL,
                     ensbl = NULL,
                     
-                    #' @description Create a new `Set` object.
-                    #' @param ... `ANY` Elements can be of any class except `list`, as long as there is a unique
-                    #' `as.character` coercion method available.
-                    #' @param universe Set. Universe that the Set lives in, i.e. elements that could be added to
-                    #' the Set. Default is [Universal].
-                    #' @param elements list. Alternative constructor that may be more efficient if passing objects
-                    #' of multiple classes.
-                    #' @param class character. Optional string naming a class that if supplied gives the set the
-                    #' `typed` property. All elements will be coerced to this class and therefore there must be
-                    #' a coercion method to this class available.
+                    
+                    #' @description Create a new `Recm` object.
+                    #' @param name The object is named.
                     #' @return A new `Set` object.
                     initialize = function(name = NA) {
                       self$name <- name
                       self$greet()
                     },
                     
+                    
                     #' @description
                     #' Creates a printable representation of the object.
-                    #' @param n numeric. Number of elements to display on either side of ellipsis when printing.
                     #' @return A character string representing the object.
                     greet = function() {
                       cat(paste0("Hello, my name is ", self$name, ".\n"))
                     },
-                    
                     
                     
                     
@@ -78,16 +56,26 @@ Recm <- R6Class("Recm",
                     
                     
                     
-                    data_setup = function(label_name, drop_list){
+                    data_setup = function(label_name, drop_list, data_split){
                       self$label <- self$data[[label_name]]
                       self$data[, (label_name):=NULL]
                       self$data[, (drop_list):=NULL]
+                      # to split the data into training and test components
+                      n <- nrow(self$data)
+                      idx <- sample.int(n = n, size=data_split*n)
+                      jdx <- setdiff( (1:n), idx)
+                      
+                      self$train_data <- self$data[idx,]
+                      self$train_label <- self$label[idx]
+                      self$test_data <- self$data[jdx,]
+                      self$test_label <- self$label[jdx]
                     },
                     
                     
                     
-                    binarize_label = function(x) {
-                      self$label <- ifelse(ann$label == x, yes=1, no=0)
+                    binarize_label = function(label, x) {
+                      new_label <- ifelse(label == x, yes=1, no=0)
+                      return(new_label)
                     },
                     
                     
@@ -137,11 +125,14 @@ Recm <- R6Class("Recm",
                                               nrounds,
                                               nthreads, 
                                               objective) {
+                      # first create the binarized label
+                      bin_label <- self$binarize_label(label=self$train_label, x=label)
+                      # then create the classifier object
                       self$ensbl <- Ensbl$new(name, 
                                               mode,
                                               size, 
                                               data, 
-                                              label, 
+                                              bin_label, 
                                               max_depth, 
                                               eta, 
                                               nrounds,
@@ -149,21 +140,28 @@ Recm <- R6Class("Recm",
                                               objective)
                     },
                     
+                    
                     train_models = function(perc) {
                       self$ensbl$train_models(perc)
                     },
                     
                     
                     
-                    predict_ensemble = function(data, label, combine_function, threshold) {
+                    predict_ensemble = function(data, combine_function) {
                       if (all(class(data)[1] == 'matrix') == FALSE) {
                         data <- as.matrix(data)
                       }
+                      
+                      self$ensbl$ensemble_predict(data, combine_function)
+                    },
+                    
+                    
+                    print_error = function(label, root, threshold) {
                       if (all(class(label) == 'numeric') == FALSE) {
                         label <- as.numeric(label)
                       }
-                      
-                      self$ensbl$ensemble_predict(data, label, combine_function, threshold)
+                      new_label <- self$binarize_label(label, root)
+                      self$ensbl$print_error(new_label, threshold)
                     }
                     
                     

@@ -102,15 +102,15 @@ Ensbl <- R6Class("Ensbl",
                     #    train classifier randomly sampling with rate "perc"
                     for (i in 1:self$size) {
                       
-                      # sub-sample tthe data
+                      # sub-sample the data
                       sdat <- self$sample_data(perc)
                       
                       # realized data engineering should take place on the sample
-                      xdat <- self$data_eng(sdat)
+                      pdat <- self$data_eng(sdat)
                       
                       # need to set stopping point?
-                      self$bstl[[i]] <- xgboost(data = xdat[['data']], 
-                                                label = xdat[['label']], 
+                      self$bstl[[i]] <- xgboost(data = pdat[['data']], 
+                                                label = pdat[['label']], 
                                                 max_depth = self$max_depth, 
                                                 eta = self$eta, 
                                                 nrounds = self$nrounds,
@@ -140,7 +140,7 @@ Ensbl <- R6Class("Ensbl",
                   
                   
                   
-                  ensemble_predict = function(data, label, combine_function, threshold){
+                  ensemble_predict = function(data, combine_function){
                     for (i in 1:self$size) {
                       self$preds[[i]] <- predict(self$bstl[[i]], data)
                     }
@@ -148,9 +148,9 @@ Ensbl <- R6Class("Ensbl",
                     self$pred_table <- do.call(cbind.data.frame, self$preds)
                     colnames(self$pred_table) <- sapply(1:self$size, function(a) paste0('ep',a))
                     
+                    # then we combine all the predictions by applying the combine_function
                     self$pred_combined <- self$ensemble_combine(combine_function)
                     
-                    self$print_error(label, threshold)
                   },
                   
                   
