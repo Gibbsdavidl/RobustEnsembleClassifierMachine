@@ -14,7 +14,7 @@ source('R/recm_obj.R')
 
 ann <- Recm$new("Ann")
 
-
+# https://www.kaggle.com/merishnasuwal/breast-cancer-prediction-dataset #
 ann$read_data('data/Breast Cancer Prediction.csv', ',', T)
 ann$data_setup(label_name='Class', 
                drop_list=c('Sample code number'), 
