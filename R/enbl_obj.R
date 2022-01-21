@@ -13,22 +13,15 @@ library(xgboost)
 #'
 #' @examples
 #' # Set of integers
-#' Set$new(1:5)
+#' 
+#' ann$build_label_ensemble(c('pairs'), size=5,
+#'   max_depth = 7, eta = 0.3, nrounds = 5,
+#'   nthreads = 4, objective = "binary:logistic")
+#' 
+#' ann$train_models(0.6)
+#' 
+#' ann$predict_ensemble(ann$train_data, 'median')
 #'
-#' # Set of multiple types
-#' Set$new("a", 5, Set$new(1))
-#'
-#' # Each Set has properties and traits
-#' s <- Set$new(1, 2, 3)
-#' s$traits
-#' s$properties
-#'
-#' # Elements cannot be duplicated
-#' Set$new(2, 2) == Set$new(2)
-#'
-#' # Ordering does not matter
-#' Set$new(1, 2) == Set$new(2, 1)
-#' @export
 Ensbl <- R6Class("Ensbl",
                 public = list(
                   bstl = list(),  # booster list
@@ -60,14 +53,15 @@ Ensbl <- R6Class("Ensbl",
                     self$name <- name
                     self$mode <- mode
                     self$size <- size
-                    self$data = data 
-                    self$label = label 
-                    self$max_depth = max_depth
-                    self$eta = eta
-                    self$nrounds = nrounds
-                    self$nthreads = nthreads 
-                    self$objective = objective
+                    self$data <- data 
+                    self$label <- label 
+                    self$max_depth <- max_depth
+                    self$eta <- eta
+                    self$nrounds <- nrounds
+                    self$nthreads <- nthreads 
+                    self$objective <- objective
                     self$preds = list()
+                    
                   },
                   
                   
@@ -76,13 +70,21 @@ Ensbl <- R6Class("Ensbl",
                   },
                   
                   
-                  
+                  # each member of the ensemble has a sample of the 
+                  # training data, the proportion specified by "perc"
+                  # or percentage.
                   sample_data = function(perc) {
-                    ## generate random index
-                    idx <- sample.int(n = nrow(self$data), size = perc*nrow(self$data), replace = F)
                     res0 <- list()
-                    res0[['data']] <- as.matrix(self$data[idx,])
-                    res0[['label']] <- as.vector(self$label[idx])
+                    # make the data list
+                    if (perc < 1.0) {
+                      ## generate random index
+                      idx <- sample.int(n = nrow(self$data), size = perc*nrow(self$data), replace = F)
+                      res0[['data']] <- as.matrix(self$data[idx,])
+                      res0[['label']] <- as.vector(self$label[idx])
+                    } else {
+                      res0[['data']] <- as.matrix(self$data)
+                      res0[['label']] <- as.vector(self$label)
+                    }                   
                     res0
                   },
                   
@@ -97,30 +99,49 @@ Ensbl <- R6Class("Ensbl",
                   
                   
                   
-                  train_models = function(perc) {
+                  train_models = function(perc, proc_data) {
                     # for each classifier from 1:size
                     #    train classifier randomly sampling with rate "perc"
                     for (i in 1:self$size) {
                       
                       # sub-sample the data
                       sdat <- self$sample_data(perc)
-                      
+                  
                       # realized data engineering should take place on the sample
-                      pdat <- self$data_eng(sdat)
-                      
-                      # need to set stopping point?
-                      self$bstl[[i]] <- xgboost(data = pdat[['data']], 
-                                                label = pdat[['label']], 
-                                                max_depth = self$max_depth, 
-                                                eta = self$eta, 
-                                                nrounds = self$nrounds,
-                                                nthread = self$nthreads, 
-                                                objective = self$objective, 
-                                                early_stopping_rounds=2)
+                      if (proc_data) {
+                        pdat <- self$data_eng(sdat)
+                      } else {
+                        pdat <- sdat
+                      }
+
+                      n_classes <- length(unique(pdat[['label']]))
+                      if (self$mode != 'final') {
+                        self$bstl[[i]] <- xgboost(data = pdat[['data']], 
+                                                  label = pdat[['label']], 
+                                                  max_depth = self$max_depth, 
+                                                  eta = self$eta, 
+                                                  nrounds = self$nrounds,
+                                                  nthread = self$nthreads, 
+                                                  objective = self$objective, 
+                                                  early_stopping_rounds=2)
+                      } else {
+                        # it's multiclass final 
+                        self$bstl[[i]] <- xgboost(data = pdat[['data']], 
+                                                  label = pdat[['label']], 
+                                                  max_depth = self$max_depth, 
+                                                  eta = self$eta, 
+                                                  nrounds = self$nrounds,
+                                                  nthread = self$nthreads, 
+                                                  objective = self$objective, 
+                                                  early_stopping_rounds=2,
+                                                  num_class=n_classes)
+                        
+                      }
+
                     }
                   },
-                  
 
+                  
                   
                   ensemble_combine = function(combine_function) {
                     

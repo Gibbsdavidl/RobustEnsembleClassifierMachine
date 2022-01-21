@@ -1,11 +1,14 @@
 TODO
 
-* recm has one enbl object, that represents one binary representation.
-  need to have a enbl for each category given a multi-category label
-  
+* docs!!
   
 COMPLETE  
 
 jan 12, 2022
 - finished adding train and test splits on building the ensemble
 
+- recm has one enbl object, that represents one binary representation.
+  need to have a enbl for each category given a multi-category label
+
+-Bug in final embl between combined pred and label .
+  
