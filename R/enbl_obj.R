@@ -26,7 +26,7 @@ Ensbl <- R6Class("Ensbl",
                 public = list(
                   bstl = list(),  # booster list
                   name = NULL,
-                  mode = NULL,
+                  obj_mode = NULL,
                   size  = NULL,
                   perc = NULL,
                   data = NULL, 
@@ -41,7 +41,7 @@ Ensbl <- R6Class("Ensbl",
                   pred_combined = NULL,
                   
                   initialize = function(name,
-                                        mode,
+                                        obj_mode,
                                         size, 
                                         data, 
                                         label, 
@@ -51,7 +51,7 @@ Ensbl <- R6Class("Ensbl",
                                         nthreads, 
                                         objective) {
                     self$name <- name
-                    self$mode <- mode
+                    self$obj_mode <- obj_mode
                     self$size <- size
                     self$data <- data 
                     self$label <- label 
@@ -70,7 +70,7 @@ Ensbl <- R6Class("Ensbl",
                   },
                   
                   
-                  # each member of the ensemble has a sample of the 
+                  # Each member of the ensemble has a sample of the 
                   # training data, the proportion specified by "perc"
                   # or percentage.
                   sample_data = function(perc) {
@@ -90,51 +90,40 @@ Ensbl <- R6Class("Ensbl",
                   
                   
                   
-                  data_eng = function(xdat) {
-                    # xdat is going to be a data.table
-
-                    return(xdat)
-                    
-                  },
-                  
-                  
-                  
-                  train_models = function(perc, proc_data) {
+                  train_models = function(perc) {
                     # for each classifier from 1:size
                     #    train classifier randomly sampling with rate "perc"
                     for (i in 1:self$size) {
                       
                       # sub-sample the data
                       sdat <- self$sample_data(perc)
-                  
-                      # realized data engineering should take place on the sample
-                      if (proc_data) {
-                        pdat <- self$data_eng(sdat)
-                      } else {
-                        pdat <- sdat
-                      }
-
-                      n_classes <- length(unique(pdat[['label']]))
-                      if (self$mode != 'final') {
-                        self$bstl[[i]] <- xgboost(data = pdat[['data']], 
-                                                  label = pdat[['label']], 
+                      
+                      n_classes <- length(unique(sdat[['label']]))
+                      
+                      if (self$obj_mode != 'final') {
+                        self$bstl[[i]] <- xgboost(data = sdat[['data']], 
+                                                  label = sdat[['label']], 
                                                   max_depth = self$max_depth, 
                                                   eta = self$eta, 
                                                   nrounds = self$nrounds,
                                                   nthread = self$nthreads, 
                                                   objective = self$objective, 
-                                                  early_stopping_rounds=2)
+                                                  eval_metric='logloss', #rmse',  # mlogloss
+                                                  early_stopping_rounds=2,
+                                                  verbose = 0)
                       } else {
                         # it's multiclass final 
-                        self$bstl[[i]] <- xgboost(data = pdat[['data']], 
-                                                  label = pdat[['label']], 
+                        self$bstl[[i]] <- xgboost(data = sdat[['data']], 
+                                                  label = sdat[['label']], 
                                                   max_depth = self$max_depth, 
                                                   eta = self$eta, 
                                                   nrounds = self$nrounds,
                                                   nthread = self$nthreads, 
                                                   objective = self$objective, 
+                                                  eval_metric='mlogloss',  # mlogloss rmse
                                                   early_stopping_rounds=2,
-                                                  num_class=n_classes)
+                                                  num_class=n_classes,
+                                                  verbose=0)
                         
                       }
 

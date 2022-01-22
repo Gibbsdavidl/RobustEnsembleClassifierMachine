@@ -22,11 +22,20 @@ Recm <- R6Class("Recm",
                     #' @field name the object's name
                     name = NULL,
                     
+                    #' @field mode the data processing mode, noproc, pairs, 
+                    data_mode = NULL,
+                    
+                    #' @field signatures lists of variables, must be in data, that will be used together, and compared to other signatures
+                    signatures = NULL,
+                    
                     #' @field file_name the data file
                     file_name = NULL,
                     
                     #' @field data the data.table used to train and test
                     data = NULL,
+                    
+                    #' @field the data column used as label, the target
+                    label = NULL,
                     
                     #' @field data_split numeric value indicating percent data to make into training data
                     data_split = NULL,
@@ -43,9 +52,6 @@ Recm <- R6Class("Recm",
                     #' @field test_label the vector used as test data labels
                     test_label = NULL,
                     
-                    #' @field the data column used as label, the target
-                    label = NULL,
-                    
                     #' @field  unique_labels the unique set of labels
                     unique_labels = NULL,
                     
@@ -54,7 +60,6 @@ Recm <- R6Class("Recm",
                     
                     #' @field the table of predictions, collecting from the ensbl list of predictors
                     pred_table = NULL,
-                    
                     
                     #' @description Create a new `Recm` object.
                     #' @param name The object is named.
@@ -82,14 +87,70 @@ Recm <- R6Class("Recm",
                     },
                     
                     
+                    # data engineering
+                    data_eng = function() {
+                      print(paste0("self mode: ", self$data_mode))
+                      
+                      rankdat <- NULL
+                      pairdat <- NULL
+                      newdat <- data.table()
+                      
+                      if ('noproc' %in% self$data_mode) {
+                        print("*** NO DATA PROCESSING ***")
+                        # do not process data
+                        return()
+                      }
+                      
+                      if ('rank' %in% self$data_mode) {
+                        cols <- colnames(ann$data)
+                        rankdat <- ann$data[ , (cols) := lapply(.SD, "rank"), .SDcols = cols]
+                        newdat <- cbind(newdat, rankdat)
+                      } 
+                      
+                      if ('pairs' %in% self$data_mode) {
+                        print("*** PROCESSING DATA: PAIRS ***")
+                        # if mode includes 'pairs' then we need to make var-pairs
+                        newcol_names <- c()
+                        newcol_dat <- list()
+                        if (is.null(rankdat)) {
+                          cols <- colnames(ann$data)
+                          # we are going to compare ranked data, to make it fair comparisons.
+                          rankdat = ann$data[ , (cols) := lapply(.SD, "rank"), .SDcols = cols]
+                        }
+                        for (ci in 1:(length(cols)-1)) {
+                          for (cj in (ci+1):length(cols)) {
+                            res0 <- as.numeric(rankdat[,.SD,.SDcols=ci] > rankdat[,.SD,.SDcols=cj])
+                            this_new_col <- paste0(cols[ci],'_X_', cols[cj])
+                            newcol_names <- c(newcol_names, this_new_col)
+                            newcol_dat[[this_new_col]] <- res0
+                          }
+                        }
+                        pairdat <- data.table(data.frame(newcol_dat))
+                        newdat <- cbind(newdat, pairdat)
+                      }
+
+                      # save the final processed data table.
+                      ann$data <- newdat
+                    },
+                    
+
                     #' @description Does some setup processing on the data file, drop columns, split data into train and test, and identify the label column.
                     #' @param label_name string, the column name indicating the target label
                     #' @param drop_list a vector of strings indicating what columns to drop
                     #' @param data_split numeric value, the percent of data to use in training 
-                    data_setup = function(label_name, drop_list, data_split){
+                    data_setup = function(data_mode=NULL, 
+                                          signatures=NULL, 
+                                          label_name=NULL, 
+                                          drop_list=NULL, 
+                                          data_split=NULL){
+                      # INITIAL setup
+                      self$data_mode <- data_mode
+                      self$signatures <- signatures
                       self$label <- sapply(self$data[[label_name]], as.character)
                       self$data[, (label_name):=NULL]
                       self$data[, (drop_list):=NULL]
+                      # DATA ENGINEERING
+                      self$data_eng()
                       # to split the data into training and test components
                       n <- nrow(self$data)
                       idx <- sample.int(n = n, size=data_split*n)
@@ -114,7 +175,6 @@ Recm <- R6Class("Recm",
                     },
                     
                     
-                    
                     #' @description 
                     #' Builds list of ensembles of XGBoost object, each classifying one binary label.
                     #' @param mode character vector, what types of data modalities to make. possible: pairs, quartiles, set-pairs
@@ -136,7 +196,6 @@ Recm <- R6Class("Recm",
                     #' nthreads = 4, objective = "binary:logistic")
                     #'
                     build_label_ensemble = function(
-                                              mode,
                                               size, 
                                               max_depth, 
                                               eta, 
@@ -150,7 +209,7 @@ Recm <- R6Class("Recm",
                         bin_label <- self$binarize_label(label=self$train_label, x=li)
                         # then create the classifier object
                         self$ensbl[[li]] <- Ensbl$new(li, 
-                                                      mode,
+                                                      'ensemble',
                                                       size, 
                                                       self$train_data,
                                                       bin_label, 
@@ -190,7 +249,6 @@ Recm <- R6Class("Recm",
                     
                     
                     build_final_ensemble = function(
-                                                mode,
                                                 size, 
                                                 max_depth, 
                                                 eta, 
@@ -205,16 +263,16 @@ Recm <- R6Class("Recm",
                       #print(head(self$train_label))
                       #print(head(remapped_label))
                       # train a XGBoost that takes multiple labels.
-                      self$ensbl[[mode]] <- Ensbl$new("final",
-                                                    mode, 
-                                                    size, 
-                                                    self$pred_table,
-                                                    remapped_label, 
-                                                    max_depth, 
-                                                    eta, 
-                                                    nrounds,
-                                                    nthreads,
-                                                    objective
+                      self$ensbl[["final"]] <- Ensbl$new("final",
+                                                      "final",
+                                                      size, 
+                                                      self$pred_table,
+                                                      remapped_label, 
+                                                      max_depth, 
+                                                      eta, 
+                                                      nrounds,
+                                                      nthreads,
+                                                      objective
                                                     )
 
                     },
@@ -223,14 +281,14 @@ Recm <- R6Class("Recm",
                     
                     train_models = function(perc) {
                       for (li in self$unique_labels) {
-                        self$ensbl[[li]]$train_models(perc, proc_data=TRUE)
+                        self$ensbl[[li]]$train_models(perc)
                       }
                     },
                     
                     
                     
                     train_final = function(perc) {
-                      self$ensbl[['final']]$train_models(perc, proc_data=FALSE)
+                      self$ensbl[['final']]$train_models(perc)
                     },
                     
                     
@@ -270,36 +328,37 @@ Recm <- R6Class("Recm",
                       remapped_label <- self$remap_multiclass_labels(test_label)
                       self$ensbl[['final']]$print_error(remapped_label, threshold)
                     },
+
                     
-                    
-                    autopred = function(data_file,
-                                        sep,
-                                        label_name,
-                                        drop_list,
-                                        data_split,
-                                        mode,
-                                        size,
-                                        max_depth,
-                                        eta,
-                                        nrounds,
-                                        nthreads,
-                                        objective,
-                                        train_perc,
-                                        combine_function
-                                        
-                                         ) {
+                    autopred = function(data_file=NULL,
+                                        sep=NULL,
+                                        label_name=NULL,
+                                        drop_list=NULL,
+                                        data_split=NULL,
+                                        data_mode=NULL,
+                                        signatures=NULL,
+                                        size=NULL,
+                                        max_depth=NULL,
+                                        eta=NULL,
+                                        nrounds=NULL,
+                                        nthreads=NULL,
+                                        objective=NULL,
+                                        train_perc=NULL,
+                                        combine_function=NULL
+                                      ) {
                       
                       # first read the data
                       ann$read_data(data_file, sep)
                       
                       # perform the data set up
-                      ann$data_setup(label_name=label_name, 
+                      ann$data_setup(data_mode=data_mode,
+                                     signatures=signatures,
+                                     label_name=label_name, 
                                      drop_list=drop_list, 
-                                     data_split = data_split)
+                                     data_split=data_split)
                       
                       # build the initial set of predictors
-                      ann$build_label_ensemble(mode, 
-                                               size=size, 
+                      ann$build_label_ensemble(size=size, 
                                                max_depth = max_depth, 
                                                eta = eta, 
                                                nrounds = nrounds,
@@ -313,8 +372,7 @@ Recm <- R6Class("Recm",
                       ann$predict_ensemble(self$train_data, combine_function = combine_function)
                       
                       # build the output predictor
-                      ann$build_final_ensemble(mode='final', 
-                                               size=size, 
+                      ann$build_final_ensemble(size=size, 
                                                max_depth=max_depth, 
                                                eta=eta, 
                                                nrounds=nrounds,
@@ -328,7 +386,6 @@ Recm <- R6Class("Recm",
                       ann$predict_final(self$test_data, combine_function)
                       
                     }
-                    
                     
                   ) # end public
       )
