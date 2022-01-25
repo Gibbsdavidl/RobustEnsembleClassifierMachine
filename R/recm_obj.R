@@ -32,7 +32,7 @@ Recm <- R6Class("Recm",
                     #' @field name the object's name
                     name = NULL,
                     
-                    #' @field mode the data processing mode, noproc, pairs, 
+                    #' @field data_mode string vector, dictates the types of data engineeering, acceptable values include combination of: original  quartiles  pairs  ranks  sigpairs
                     data_mode = NULL,
                     
                     #' @field signatures lists of variables, must be in data, that will be used together, and compared to other signatures
@@ -61,6 +61,9 @@ Recm <- R6Class("Recm",
                     
                     #' @field test_label the vector used as test data labels
                     test_label = NULL,
+
+                    #' @field data_colnames the column names used to train the models 
+                    data_colnames = NULL,
                     
                     #' @field  unique_labels the unique set of labels
                     unique_labels = NULL,
@@ -98,13 +101,44 @@ Recm <- R6Class("Recm",
                     },
                   
                     
+                    #' @description Reads the data file.
+                    #' @param file_name The name of the file.
+                    #' @param sep The separting character ',' or '\t'
+                    read_train_data = function(file_name, sep, header) {
+                      self$file_name <- file_name
+                      self$train_data <- data.table::fread(file=file_name, sep=sep, header=T)
+                      colnames(self$train_data) <- gsub(" ", "_", colnames(self$train_data))
+                    },
+                    
+                    
+                    #' @description Reads the data file.
+                    #' @param file_name The name of the file.
+                    #' @param sep The separting character ',' or '\t'
+                    read_test_data = function(file_name, sep, header) {
+                      self$file_name <- file_name
+                      self$test_data <- data.table::fread(file=file_name, sep=sep, header=T)
+                      colnames(self$test_data) <- gsub(" ", "_", colnames(self$test_data))
+                    },
+                    
+                    
                     # data engineering
-                    data_eng = function() {
+                    #' @description Data engineering, replaces the object's data.table.
+                    data_eng = function(data_source=NULL) {
                       
                       if (!all(self$data_mode %in% c('original','quartiles','pairs','ranks','sigpairs'))) {
                         print("ERROR:  please choose a valid collection of data modes: ")
                         print('original  quartiles  pairs  ranks  sigpairs')
                         stop('data_mode, wrong value')
+                      }
+                      
+                      if (data_source == 'train') {
+                        dat <- self$train_data
+                      } else if (data_source == 'test') {
+                        dat <- self$test_data
+                      } else if (data_source == 'data') {
+                        dat <- self$data
+                      } else {
+                        stop('ERROR: data source must be train, test, or data.')
                       }
 
                       rankdat <- NULL
@@ -113,22 +147,21 @@ Recm <- R6Class("Recm",
                       
                       if ('original' %in% self$data_mode) {
                         print("*** Keeping Orig. Data ***")
-                        # do not process data
-                        newdat <- cbind(newdat, self$data)
+                        newdat <- cbind(newdat, dat)
                       }
                       
                       if ('quartiles' %in% self$data_mode) {
                         print("*** BUILDING QUARTILES ***")
-                        cols <- colnames(ann$data)
-                        quartdat <- ann$data[ , (cols) := lapply(.SD, "data_bin_4"), .SDcols = cols]
+                        cols <- colnames(dat)
+                        quartdat <- dat[ , (cols) := lapply(.SD, "data_bin_4"), .SDcols = cols]
                         colnames(quartdat) <- sapply(cols, function(a) paste0(a,'_quartile',collapse = ''))
                         newdat <- cbind(newdat, quartdat)
                       } 
                       
                       if ('ranks' %in% self$data_mode) {
                         print("*** RANKING DATA ***")
-                        cols <- colnames(ann$data)
-                        rankdat <- ann$data[ , (cols) := lapply(.SD, "rank", ties.method="min"), .SDcols = cols]
+                        cols <- colnames(dat)
+                        rankdat <- dat[ , (cols) := lapply(.SD, "rank", ties.method="min"), .SDcols = cols]
                         colnames(rankdat) <- sapply(cols, function(a) paste0(a,'_ranked',collapse = ''))
                         newdat <- cbind(newdat, rankdat)
                       }
@@ -138,10 +171,10 @@ Recm <- R6Class("Recm",
                         # if mode includes 'pairs' then we need to make var-pairs
                         newcol_names <- c()
                         newcol_dat <- list()
-                        cols <- colnames(ann$data)
+                        cols <- colnames(dat)
                         for (ci in 1:(length(cols)-1)) {
                           for (cj in (ci+1):length(cols)) {
-                            res0 <- as.numeric(self$data[,.SD,.SDcols=ci] > self$data[,.SD,.SDcols=cj])
+                            res0 <- as.numeric(dat[,.SD,.SDcols=ci] > dat[,.SD,.SDcols=cj])
                             this_new_col <- paste0(cols[ci],'_X_', cols[cj])
                             newcol_names <- c(newcol_names, this_new_col)
                             newcol_dat[[this_new_col]] <- res0
@@ -167,7 +200,7 @@ Recm <- R6Class("Recm",
                             # for each pair, look at each pair of genes, record gt or lt
                             for (sx1 in s1) {
                               for (sx2 in s2) {
-                                res0 <- as.numeric(self$data[,.SD,.SDcols=sx1] > self$data[,.SD,.SDcols=sx2])
+                                res0 <- as.numeric(dat[,.SD,.SDcols=sx1] > dat[,.SD,.SDcols=sx2])
                                 sig_pair_temp[[paste0(sx1,sx2,collapse = '_X_')]] <- res0
                               }
                             }
@@ -185,7 +218,13 @@ Recm <- R6Class("Recm",
                       }
 
                       # save the final processed data table.
-                      ann$data <- newdat
+                      if (data_source == 'train') {
+                        self$train_data <- newdat
+                      } else if (data_source == 'test') {
+                        self$test_data <- newdat
+                      } else if (data_source == 'data') {
+                        self$data <- newdat
+                      }
                     },
                     
 
@@ -208,8 +247,10 @@ Recm <- R6Class("Recm",
                       # then apply with those names
                       self$data[, (label_name):=NULL]
                       self$data[, (drop_list):=NULL]
+                      # grab the original data column names
+                      self$data_colnames <- colnames(self$data)
                       # DATA ENGINEERING
-                      self$data_eng()
+                      self$data_eng('data')
                       # to split the data into training and test components
                       n <- nrow(self$data)
                       idx <- sample.int(n = n, size=data_split*n)
@@ -223,6 +264,60 @@ Recm <- R6Class("Recm",
                       self$unique_labels <- unique(self$train_label)
                     },
                     
+                    
+                    #' @description Does some setup processing on the training data file, drop columns and identify the label column.
+                    #' @param label_name string, the column name indicating the target label
+                    #' @param drop_list a vector of strings indicating what columns to drop
+                    train_data_setup = function(data_mode=NULL, 
+                                                signatures=NULL, 
+                                                label_name=NULL, 
+                                                drop_list=NULL){
+                      # INITIAL setup
+                      self$data_mode <- data_mode
+                      self$signatures <- signatures
+                      self$train_label <- sapply(self$train_data[[label_name]], as.character)
+                      # fix any spaces in the column names
+                      label_name <- gsub(' ', '_', label_name)
+                      drop_list <- gsub(' ', '_', drop_list)
+                      # then apply with those names
+                      self$train_data[, (label_name):=NULL]
+                      self$train_data[, (drop_list):=NULL]
+                      # grab the original data column names
+                      self$data_colnames <- colnames(self$train_data)
+                      # DATA ENGINEERING
+                      self$data_eng('train')
+                      # and record the unique categories in labels 
+                      self$unique_labels <- unique(self$train_label)
+                    },
+                    
+                    
+                    #' @description Does some setup processing on the test data file, drop columns and identify the label column.
+                    #' The data_mode and signatures will have already been set in training.
+                    #' @param label_name string, the column name indicating the target label
+                    #' @param drop_list a vector of strings indicating what columns to drop
+                    test_data_setup = function(label_name=NULL, 
+                                               drop_list=NULL){
+                      # INITIAL setup
+                      self$test_label <- sapply(self$test_data[[label_name]], as.character)
+                      # fix any spaces in the column names
+                      label_name <- gsub(' ', '_', label_name)
+                      drop_list <- gsub(' ', '_', drop_list)
+                      # then apply with those names
+                      self$test_data[, (label_name):=NULL]
+                      self$test_data[, (drop_list):=NULL]
+                      # check that the data column names are the same as used in training
+                      if (!all(colnames(self$test_data) %in% self$data_colnames)) {
+                        print(self$data_colnames)
+                        stop('Test data column names must match what was used in training.')
+                      }
+                      # DATA ENGINEERING
+                      self$data_eng('test')
+                      # and record the unique categories in labels 
+                      if (! all(unique(self$test_label) %in% self$unique_labels)) {
+                        stop('TEST labels and training labels must be from the same set.')
+                      }
+                    },
+
                     
                     # takes the label, and returns a vector of 0s and 1s
                     binarize_label = function(label, x) {

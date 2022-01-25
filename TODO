@@ -1,10 +1,27 @@
 TODO
 
-* docs!!
+* continue docs!!
+
+* function to wipe all the data out of the ensemble. keep only annotations.
+
+* more error catching functions.
   
+
+
 COMPLETE  
 
+jan 24, 2022
+
+- can import train and test data separately... new example for that.
+
+- all data engineering functions done. 
+
+- produces signature-pairs as predictors.
+
+
+
 jan 12, 2022
+
 - finished adding train and test splits on building the ensemble
 
 - recm has one enbl object, that represents one binary representation.
