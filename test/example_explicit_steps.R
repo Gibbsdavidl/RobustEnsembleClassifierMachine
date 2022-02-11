@@ -16,8 +16,9 @@ source('R/recm_obj.R')
 ann <- Recm$new("Ann")
 
 # https://www.kaggle.com/merishnasuwal/breast-cancer-prediction-dataset #
-ann$read_data('data/Breast Cancer Prediction.csv', ',', T)
-ann$data_setup(data_mode='pairs',
+ann$data_setup(file_name='data/Breast Cancer Prediction.csv',
+               sep=',',
+               data_mode='pairs',
                label_name='Class', 
                drop_list=c('Sample code number'), 
                data_split = 0.6)
