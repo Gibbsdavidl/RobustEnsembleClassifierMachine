@@ -3,6 +3,7 @@
 
 library(R6)
 library(data.table)
+library(dplyr)
 
 source('R/enbl_obj.R')
 source('R/deng_obj.R')
@@ -72,6 +73,9 @@ Recm <- R6Class("Recm",
                     
                     #' @field the ensemble of predictors
                     ensbl = list(),
+                    
+                    #' @field the table of predictions, collecting from the ensbl list of predictors
+                    call_table = NULL,
                     
                     #' @field the table of predictions, collecting from the ensbl list of predictors
                     pred_table = NULL,
@@ -174,8 +178,10 @@ Recm <- R6Class("Recm",
                       label_name <- gsub(' ', '_', label_name)
                       drop_list <- gsub(' ', '_', drop_list)
                       # then apply with those names
-                      self$data[, (label_name):=NULL]
-                      self$data[, (drop_list):=NULL]
+                      if (!is.null(drop_list)) {
+                        self$data[, (label_name):=NULL]
+                        self$data[, (drop_list):=NULL]
+                      }
                       # grab the original data column names
                       self$data_colnames <- colnames(self$data)
                       # DATA ENGINEERING
@@ -216,8 +222,10 @@ Recm <- R6Class("Recm",
                       label_name <- gsub(' ', '_', label_name)
                       drop_list <- gsub(' ', '_', drop_list)
                       # then apply with those names
-                      self$train_data[, (label_name):=NULL]
-                      self$train_data[, (drop_list):=NULL]
+                      if (!is.null(drop_list)) {
+                        self$train_data[, (label_name):=NULL]
+                        self$train_data[, (drop_list):=NULL]
+                      }
                       # grab the original data column names
                       self$data_colnames <- colnames(self$train_data)
                       # DATA ENGINEERING
@@ -246,8 +254,10 @@ Recm <- R6Class("Recm",
                       label_name <- gsub(' ', '_', label_name)
                       drop_list <- gsub(' ', '_', drop_list)
                       # then apply with those names
-                      self$test_data[, (label_name):=NULL]
-                      self$test_data[, (drop_list):=NULL]
+                      if (!is.null(drop_list)) {
+                        self$test_data[, (label_name):=NULL]
+                        self$test_data[, (drop_list):=NULL]
+                      }
                       # check that the data column names are the same as used in training
                       if (!all(colnames(self$test_data) %in% self$data_colnames)) {
                         print(self$data_colnames)
@@ -330,6 +340,7 @@ Recm <- R6Class("Recm",
                       }
                       
                       self$pred_table <- do.call(cbind.data.frame, final_train_data)
+                      
                       return(invisible(self))
                     },
                     
@@ -406,6 +417,7 @@ Recm <- R6Class("Recm",
                     },
                     
                     
+                    
                     # predict final uses predictions from predict_ensemble
                     predict_final = function(data, combine_function) {
                       self$predict_ensemble(data, combine_function)
@@ -428,12 +440,82 @@ Recm <- R6Class("Recm",
                     },
                     
                     
+                    # total percent correct from all calls
+                    accuracy = function(labels, calls) {
+                      m <- sum(labels == calls)
+                      return(m/length(labels))
+                    },
                     
-                    print_final_error = function(test_label, threshold) {
-                      remapped_label <- self$remap_multiclass_labels(test_label)
-                      self$ensbl[['final']]$print_error(remapped_label, threshold)
+                    # precision
+                    # what proportion of predicted positives are truly positive
+                    precision = function(cmdf, i) {
+                      called_pos <- cmdf %>% dplyr::filter(calls==i) %>% pull('Freq')
+                      true_pos <- cmdf %>% dplyr::filter(labels==i & calls == i) %>% pull('Freq')
+                      return(true_pos / sum(called_pos))
+                    },
+                    
+                    # sensitivity
+                    # what proportion of true positives are called positive
+                    sensitivity = function(cmdf, i) {
+                      true_labels <- cmdf %>% dplyr::filter(labels==i) %>% pull('Freq')
+                      true_pos <- cmdf %>% dplyr::filter(labels==i & calls == i) %>% pull('Freq')
+                      return(true_pos / sum(true_labels))
+                    },
+                    
+                    # specificity
+                    # what proportion of true negatives are called negative
+                    specificity = function(cmdf, i) {
+                      false_labels <- cmdf %>% dplyr::filter(labels!=i) %>% pull('Freq')
+                      true_neg <- cmdf %>% dplyr::filter(labels!=i & calls != i) %>% pull('Freq')
+                      return(sum(true_neg) / sum(false_labels))
+                    },
+                    
+                    
+                    final_classification_metrics = function() {
+                      # first make sure our labels are mapped to integers correctly
+                      labels <- self$remap_multiclass_labels(self$test_label)
+                      
+                      # get the calls
+                      calls <- self$ensbl[['final']]$pred_combined
+                  
+                      # then build the multi-class confusion matrix
+                      confusion_matrix <- table( labels, calls )
+                      
+                      print('confusion matrix')
+                      print(confusion_matrix)
+                      
+                      cm_labels <- as.integer(rownames(confusion_matrix))
+                      
+                      # and we'll transform that into a data.frame
+                      cmdf <- as.data.frame(confusion_matrix, stringsAsFactors = F)
+                      
+                      # accuracy
+                      acc <- self$accuracy(labels, calls)
+                      
+                      # first compute precision
+                      prec <- sapply(cm_labels, function(a) self$precision(cmdf, a))
+                      
+                      # then specificity
+                      spec <- sapply(cm_labels, function(a) self$specificity(cmdf, a))
+                      
+                      # then sensitivity or recall
+                      sens <- sapply(cm_labels, function(a) self$sensitivity(cmdf, a))
+                      
+                      # then F1
+                      f1 <-(2*sens*prec) / (sens+prec)
+                      
+                      metrics <- data.frame(Label=cm_labels,
+                                            Accuracy=acc,
+                                            Sensitivity=sens,
+                                            Specificity=spec,
+                                            Precision=prec,
+                                            F1=f1)
+                      
+                      return(metrics)
+                      
                     },
 
+                    
                     
                     autopred = function(data_file=NULL,
                                         sep=NULL,
@@ -454,7 +536,7 @@ Recm <- R6Class("Recm",
                       
 
                       # perform the data set up
-                      ann$data_setup(file_name=data_file,
+                      self$data_setup(file_name=data_file,
                                      sep=sep,
                                      data_mode=data_mode,
                                      signatures=signatures,
@@ -463,34 +545,35 @@ Recm <- R6Class("Recm",
                                      data_split=data_split)
                       
                       # build the initial set of predictors
-                      ann$build_label_ensemble(size=size, 
-                                               max_depth = max_depth, 
-                                               eta = eta, 
-                                               nrounds = nrounds,
-                                               nthreads = nthreads, 
-                                               objective = objective)
+                      self$build_label_ensemble(size=size, 
+                                                max_depth = max_depth, 
+                                                eta = eta, 
+                                                nrounds = nrounds,
+                                                nthreads = nthreads, 
+                                                objective = objective)
                       
                       # and train them using a random selection of data
-                      ann$train_models(train_perc)
+                      self$train_models(train_perc)
                       
                       # then make a prediction on the training data
-                      ann$predict_ensemble(self$train_data, combine_function = combine_function)
+                      self$predict_ensemble(self$train_data, combine_function = combine_function)
                       
                       # build the output predictor
-                      ann$build_final_ensemble(size=size, 
-                                               max_depth=max_depth, 
-                                               eta=eta, 
-                                               nrounds=nrounds,
-                                               nthreads = nthreads, 
-                                               objective = 'multi:softmax')
+                      self$build_final_ensemble(size=size, 
+                                                max_depth=max_depth, 
+                                                eta=eta, 
+                                                nrounds=nrounds,
+                                                nthreads = nthreads, 
+                                                objective = 'multi:softmax')
 
                       # and use the earlier training predictions to train the output                      
-                      ann$train_final(train_perc)
+                      self$train_final(train_perc)
                       
                       # and finally, make a prediction on some training data.
-                      ann$predict_final(self$test_data, combine_function)
-                      
+                      self$predict_final(self$test_data, combine_function)
+
                     }
+                    
                     
                   ) # end public
       )

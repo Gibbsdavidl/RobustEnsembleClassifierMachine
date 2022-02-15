@@ -3,7 +3,6 @@ library(R6)
 library(data.table)
 
 
-
 #' deng_obj  data engineering object (deng)
 #' 
 #' An object that transforms data into more robust forms.

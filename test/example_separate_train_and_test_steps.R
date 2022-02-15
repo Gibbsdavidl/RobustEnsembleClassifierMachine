@@ -56,6 +56,9 @@ ann$test_data_setup(
 
 ann$predict_final(ann$test_data, 'median')
 
-print("\nThe final output predictor error:")
-ann$print_final_error(ann$test_label, 0.5)
+
+metrics <- ann$final_classification_metrics(ann$test_label)
+print(metrics)
+
+
 

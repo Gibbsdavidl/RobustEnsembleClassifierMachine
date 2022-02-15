@@ -26,4 +26,4 @@ ann$autopred(data_file='data/Breast Cancer Prediction.csv',
              train_perc=0.5,
              combine_function='median')
 
-ann$print_final_error(ann$test_label, 0.5) 
+print(ann$final_classification_metrics(ann$test_label))

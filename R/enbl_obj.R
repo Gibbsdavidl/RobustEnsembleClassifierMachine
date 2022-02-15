@@ -131,7 +131,6 @@ Ensbl <- R6Class("Ensbl",
                   },
 
                   
-                  
                   ensemble_combine = function(combine_function) {
                     
                     if (combine_function == 'max') {
@@ -150,6 +149,27 @@ Ensbl <- R6Class("Ensbl",
                   
                   
                   
+                  final_ensemble_combine = function(combine_function) {
+                    
+                    print('final ensemble combine')
+                    print(self$name)
+                    print(head(self$pred_table))
+                    
+                    voting <- function(x) {
+                      tablex <- table(x)
+                      as.integer(names(which(tablex == max(tablex))))
+                    }
+                    
+                    # can be majority voting
+                    self$pred_combined <- apply(self$pred_table, 1, voting)
+
+                    
+                    print('pred_combined')
+                    print(self$pred_combined)
+                  },
+                  
+                  
+                  
                   ensemble_predict = function(data, combine_function){
                     for (i in 1:self$size) {
                       self$preds[[i]] <- predict(self$bstl[[i]], data)
@@ -158,11 +178,16 @@ Ensbl <- R6Class("Ensbl",
                     self$pred_table <- do.call(cbind.data.frame, self$preds)
                     colnames(self$pred_table) <- sapply(1:self$size, function(a) paste0('ep',a))
                     
-                    # then we combine all the predictions by applying the combine_function
-                    self$pred_combined <- self$ensemble_combine(combine_function)
+                    final_combine_function <- ''
+                    
+                    if (self$name == 'final') { # then we might have have multiclass calls.
+                      self$pred_combined <- self$final_ensemble_combine(final_combine_function)
+                    } else {
+                      # then we combine all the predictions by applying the combine_function
+                      self$pred_combined <- self$ensemble_combine(combine_function)
+                    }
                     
                   },
-                  
                   
                   
                   print_error = function(label, threshold) {
