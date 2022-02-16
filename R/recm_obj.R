@@ -18,7 +18,6 @@ data_bin_4 <- function(x) {
   as.numeric(cut(x, breaks=p, include.lowest = T))
 }
 
-
 #' Recm  Robust ensemble classifier machine (Recm)
 #' 
 #' An object that holds data and an ensemble of classifiers
@@ -169,17 +168,17 @@ Recm <- R6Class("Recm",
                       # First reading it in
                       self$file_name <- file_name
                       self$data <- data.table::fread(file=file_name, sep=sep, header=T)
+                      # fix any spaces in the column names
+                      # then apply with those names
                       colnames(self$data) <- gsub(" ", "_", colnames(self$data))
                       # INITIAL setup
                       self$data_mode <- data_mode
                       self$signatures <- signatures
                       self$label <- sapply(self$data[[label_name]], as.character)
-                      # fix any spaces in the column names
                       label_name <- gsub(' ', '_', label_name)
-                      drop_list <- gsub(' ', '_', drop_list)
-                      # then apply with those names
+                      self$data[, (label_name):=NULL]
                       if (!is.null(drop_list)) {
-                        self$data[, (label_name):=NULL]
+                        drop_list <- gsub(' ', '_', drop_list)
                         self$data[, (drop_list):=NULL]
                       }
                       # grab the original data column names
@@ -213,17 +212,17 @@ Recm <- R6Class("Recm",
                       #READING DATA
                       self$file_name <- file_name
                       self$train_data <- data.table::fread(file=file_name, sep=sep, header=T)
+                      # fix any spaces in the column names
                       colnames(self$train_data) <- gsub(" ", "_", colnames(self$train_data))
                       # INITIAL setup
                       self$data_mode <- data_mode
                       self$signatures <- signatures
                       self$train_label <- sapply(self$train_data[[label_name]], as.character)
-                      # fix any spaces in the column names
                       label_name <- gsub(' ', '_', label_name)
-                      drop_list <- gsub(' ', '_', drop_list)
+                      self$train_data[, (label_name):=NULL]
                       # then apply with those names
                       if (!is.null(drop_list)) {
-                        self$train_data[, (label_name):=NULL]
+                        drop_list <- gsub(' ', '_', drop_list)
                         self$train_data[, (drop_list):=NULL]
                       }
                       # grab the original data column names
@@ -247,15 +246,14 @@ Recm <- R6Class("Recm",
                       #READ DATA
                       self$file_name <- file_name
                       self$test_data <- data.table::fread(file=file_name, sep=sep, header=T)
+                      # fix any spaces in the column names
                       colnames(self$test_data) <- gsub(" ", "_", colnames(self$test_data))
                       # INITIAL setup
                       self$test_label <- sapply(self$test_data[[label_name]], as.character)
-                      # fix any spaces in the column names
                       label_name <- gsub(' ', '_', label_name)
-                      drop_list <- gsub(' ', '_', drop_list)
-                      # then apply with those names
+                      self$test_data[, (label_name):=NULL]
                       if (!is.null(drop_list)) {
-                        self$test_data[, (label_name):=NULL]
+                        drop_list <- gsub(' ', '_', drop_list)
                         self$test_data[, (drop_list):=NULL]
                       }
                       # check that the data column names are the same as used in training
@@ -358,6 +356,15 @@ Recm <- R6Class("Recm",
                     },
                     
                     
+                    unmap_multiclass_labels = function(labels) {
+                      new_labels <- c()
+                      for (li in labels) { 
+                        new_labels <- c(new_labels, self$unique_labels[(li+1)])
+                      }
+                      return(new_labels)
+                    },
+                    
+                    
                     
                     build_final_ensemble = function(
                                                 size, 
@@ -422,8 +429,10 @@ Recm <- R6Class("Recm",
                     predict_final = function(data, combine_function) {
                       self$predict_ensemble(data, combine_function)
                       self$build_pred_table()
+
                       # then we should have a new pred_table from the data
                       pred_matrix <- as.matrix(self$pred_table)
+                      
                       self$ensbl[['final']]$ensemble_predict(pred_matrix, combine_function)
                       return(invisible(self))
                     },
@@ -473,18 +482,17 @@ Recm <- R6Class("Recm",
                     
                     final_classification_metrics = function() {
                       # first make sure our labels are mapped to integers correctly
-                      labels <- self$remap_multiclass_labels(self$test_label)
-                      
+                      labels <- self$test_label
+
                       # get the calls
-                      calls <- self$ensbl[['final']]$pred_combined
-                  
+                      mapped_calls <- self$ensbl[['final']]$pred_combined
+                      calls <- self$unmap_multiclass_labels(mapped_calls)
+                      
                       # then build the multi-class confusion matrix
                       confusion_matrix <- table( labels, calls )
-                      
-                      print('confusion matrix')
-                      print(confusion_matrix)
-                      
-                      cm_labels <- as.integer(rownames(confusion_matrix))
+            
+                      # labels of the confusion matrix
+                      cm_labels <- rownames(confusion_matrix)
                       
                       # and we'll transform that into a data.frame
                       cmdf <- as.data.frame(confusion_matrix, stringsAsFactors = F)

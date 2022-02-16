@@ -5,36 +5,33 @@ source('R/recm_obj.R')
 
 ann <- Recm$new("Ann")
 
-
+# this will train the classifier and test it on a small split
 ann$autopred(data_file='data/sim_data_3classes_train.csv',
              sep=',',
              label_name='label',
              drop_list = NULL,
-             data_split=0.80,
-             data_mode=c('original'), #'quartiles', 'original', 'ranks', 'pairs', 'sigpairs'
+             data_split=0.70,
+             data_mode=c('pairs'), #'quartiles', 'original', 'ranks', 'pairs', 'sigpairs'
              signatures=NULL,
-             size=6,
+             size=7,
              max_depth=3,
              eta=0.3,
-             nrounds=5,
+             nrounds=9,
              nthreads=4,
              objective="binary:logistic",
              train_perc=0.5,
              combine_function='median')
 
-metrics <- ann$final_classification_metrics()
-print(metrics)
+# metrics on the test split
+ann$final_classification_metrics() %>% print()
 
-# NOW we'll read in the training data
-# https://www.kaggle.com/merishnasuwal/breast-cancer-prediction-dataset #
+# NOW we'll get the test data set up and make predictions
 ann$test_data_setup(
   file_name='data/sim_data_3classes_test.csv',
   sep=',', 
   label_name='label', 
-  drop_list=NULL)
+  drop_list=NULL)$predict_final(ann$test_data, 'median')
 
-ann$predict_final(ann$test_data, 'median')
-
-metrics <- ann$final_classification_metrics()
-print(metrics)
+# metrics on the test set.
+ann$final_classification_metrics() %>% print()
 

@@ -151,35 +151,40 @@ Ensbl <- R6Class("Ensbl",
                   
                   final_ensemble_combine = function(combine_function) {
                     
-                    print('final ensemble combine')
-                    print(self$name)
-                    print(head(self$pred_table))
-                    
                     voting <- function(x) {
                       tablex <- table(x)
-                      as.integer(names(which(tablex == max(tablex))))
+                      vote <- as.integer(names(which(tablex == max(tablex))))
+                      if (length(vote) > 1) {
+                        return(sample(vote,1))
+                      }
+                      else {
+                        return(vote)
+                      }
                     }
                     
                     # can be majority voting
-                    self$pred_combined <- apply(self$pred_table, 1, voting)
-
-                    
-                    print('pred_combined')
-                    print(self$pred_combined)
+                    res0 <- c()
+                    for (i in 1:nrow(self$pred_table)){
+                      res0 <- c(res0, as.numeric(voting(as.numeric(self$pred_table[i,]))))
+                    }
+                    self$pred_combined <- res0
                   },
                   
                   
                   
                   ensemble_predict = function(data, combine_function){
+                    # for each member of the ensemble
                     for (i in 1:self$size) {
+                      # make a prediction on this data
                       self$preds[[i]] <- predict(self$bstl[[i]], data)
                     }
                     
+                    # then group all the predictions together
                     self$pred_table <- do.call(cbind.data.frame, self$preds)
                     colnames(self$pred_table) <- sapply(1:self$size, function(a) paste0('ep',a))
                     
+                    # and make a final call or combine the predictions using a function
                     final_combine_function <- ''
-                    
                     if (self$name == 'final') { # then we might have have multiclass calls.
                       self$pred_combined <- self$final_ensemble_combine(final_combine_function)
                     } else {
@@ -191,8 +196,9 @@ Ensbl <- R6Class("Ensbl",
                   
                   
                   print_error = function(label, threshold) {
-                    
+                    # for each member of the ensemble
                     for (i in 1:self$size) {
+                      # check the error on the binary call
                       err <- as.numeric(sum(as.integer(self$preds[[i]] > threshold) != label)) / length(label)
                       print(paste0('ep', i, ' prediction error: ', err))
                     }

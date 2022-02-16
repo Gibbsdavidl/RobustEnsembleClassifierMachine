@@ -1,69 +1,49 @@
 
 
-# generate simualted data
+# Generate simulated data for pairs prediction.
+# 
+# Here, each variable is normally distributed, but 
+# within classes, there are pairs relationships.
+# A classifier trained on the original data will do
+# poorly on the test data, but if trained on pairs,
+# the can perform adequately.
+
 
 N <- 200  # number of observations
 
 classes <- 3  # number of classes to predict, labels
 
-vars <- 12
+vars <- 12  # number of variables to simulate
 
-df <- c()
-labels <- c()
 
-# inside loop?
-var_levels1 <- (rnorm(vars, mean = 20, sd = 10))
-var_levels2 <- (rnorm(vars, mean = 20, sd = 10))
-var_levels3 <- (rnorm(vars, mean = 20, sd = 10))
+############### TRAIN DATA ###########################
+
+df <- c()  # resulting data.frame
+labels <- c() # and labels for each row
 
 for (i in 1:N) {
   
   ci <- sample.int(n=3, size = 1)
+  ci <- paste0('label_',ci,collapse = '')
   
   labels <- c(labels, ci)
   
-  if (ci == 1) {
+  var_values <- rnorm(vars, 5, 2) # sampling the values for L1
+  
+  if (ci == 'label_1') {
+    var_values[7] <- var_values[2] + .1
+    var_values[9] <- var_values[1] + .1
+    df <- rbind(df, data.frame(matrix(var_values, nr = 1, nc = vars)))
     
-    samp_levels1 <- sapply(var_levels1, function(vi) rnorm(1, vi, 2)) # sampling the values for L1
-    samp_levels1[7] <- samp_levels1[2] + 10
-    samp_levels1[9] <- samp_levels1[1] + 10
+  } else if (ci == 'label_2') {
+    var_values[3] <- var_values[6] + .1
+    var_values[4] <- var_values[5] + .1
+    df <- rbind(df, data.frame(matrix(var_values, nc = vars)))
     
-    samp_levels1[3] <- samp_levels1[6] - 10
-    samp_levels1[4] <- samp_levels1[5] - 10
-    
-    samp_levels1[11] <- samp_levels1[12] - 10
-    samp_levels1[8] <- samp_levels1[10] - 10    
-    
-    df <- rbind(df, data.frame(matrix(samp_levels1, nr = 1, nc = vars)))
-    
-  } else if (ci == 2) {
-    
-    samp_levels2 <- sapply(var_levels2, function(vi) rnorm(1, vi, 2)) # sampling the values for L1
-    samp_levels2[7] <- samp_levels2[2] - 10
-    samp_levels2[9] <- samp_levels2[1] - 10
-    
-    samp_levels2[3] <- samp_levels2[6] + 10
-    samp_levels2[4] <- samp_levels2[5] + 10
-    
-    samp_levels2[11] <- samp_levels2[12] - 10
-    samp_levels2[8] <- samp_levels2[10] - 10    
-    
-    df <- rbind(df, data.frame(matrix(samp_levels2, nc = vars)))
-    
-  } else if (ci == 3) {
-    
-    samp_levels3 <- sapply(var_levels3, function(vi) rnorm(1, vi, 2)) # sampling the values for L1
-    
-    samp_levels3[7] <- samp_levels3[2] - 10
-    samp_levels3[9] <- samp_levels3[1] - 10
-    
-    samp_levels3[3] <- samp_levels3[6] - 10
-    samp_levels3[4] <- samp_levels3[5] - 10
-    
-    samp_levels3[11] <- samp_levels3[12] + 10
-    samp_levels3[8] <- samp_levels3[10] + 10    
-    
-    df <- rbind(df, data.frame(matrix(samp_levels3, nc = vars)))
+  } else if (ci == 'label_3') {
+    var_values[11] <- var_values[12] + .1
+    var_values[8] <- var_values[10] + .1    
+    df <- rbind(df, data.frame(matrix(var_values, nc = vars)))
   }
   
 }
@@ -72,65 +52,36 @@ df["label"] <- labels
 
 write.csv(df, file='data/sim_data_3classes_train.csv', quote = F, row.names = F)
 
-
+############ TEST DATA #################
 
 df <- c()
 labels <- c()
 
-# inside loop?
-var_levels1 <- (rnorm(vars, mean = 20, sd = 10))
-var_levels2 <- (rnorm(vars, mean = 20, sd = 10))
-var_levels3 <- (rnorm(vars, mean = 20, sd = 10))
-
 for (i in 1:N) {
   
   ci <- sample.int(n=3, size = 1)
+  ci <- paste0('label_',ci,collapse = '')
   
   labels <- c(labels, ci)
   
-  if (ci == 1) {
+  var_values <- rnorm(vars, 5, 2) # sampling the values for L1
+  
+  if (ci == 'label_1') {
+    var_values[7] <- var_values[2] + .1
+    var_values[9] <- var_values[1] + .1
+    df <- rbind(df, data.frame(matrix(var_values, nr = 1, nc = vars)))
     
-    samp_levels1 <- sapply(var_levels1, function(vi) rnorm(1, vi, 2)) # sampling the values for L1
-    samp_levels1[7] <- samp_levels1[2] + 10
-    samp_levels1[9] <- samp_levels1[1] + 10
+  } else if (ci == 'label_2') {
+    var_values[3] <- var_values[6] + .1
+    var_values[4] <- var_values[5] + .1
+    df <- rbind(df, data.frame(matrix(var_values, nc = vars)))
     
-    samp_levels1[3] <- samp_levels1[6] - 10
-    samp_levels1[4] <- samp_levels1[5] - 10
-    
-    samp_levels1[11] <- samp_levels1[12] - 10
-    samp_levels1[8] <- samp_levels1[10] - 10    
-    
-    df <- rbind(df, data.frame(matrix(samp_levels1, nr = 1, nc = vars)))
-    
-  } else if (ci == 2) {
-    
-    samp_levels2 <- sapply(var_levels2, function(vi) rnorm(1, vi, 2)) # sampling the values for L1
-    samp_levels2[7] <- samp_levels2[2] - 10
-    samp_levels2[9] <- samp_levels2[1] - 10
-    
-    samp_levels2[3] <- samp_levels2[6] + 10
-    samp_levels2[4] <- samp_levels2[5] + 10
-    
-    samp_levels2[11] <- samp_levels2[12] - 10
-    samp_levels2[8] <- samp_levels2[10] - 10    
-    
-    df <- rbind(df, data.frame(matrix(samp_levels2, nc = vars)))
-    
-  } else if (ci == 3) {
-    
-    samp_levels3 <- sapply(var_levels3, function(vi) rnorm(1, vi, 2)) # sampling the values for L1
-    
-    samp_levels3[7] <- samp_levels3[2] - 10
-    samp_levels3[9] <- samp_levels3[1] - 10
-    
-    samp_levels3[3] <- samp_levels3[6] - 10
-    samp_levels3[4] <- samp_levels3[5] - 10
-    
-    samp_levels3[11] <- samp_levels3[12] + 10
-    samp_levels3[8] <- samp_levels3[10] + 10    
-    
-    df <- rbind(df, data.frame(matrix(samp_levels3, nc = vars)))
-  }  
+  } else if (ci == 'label_3') {
+    var_values[11] <- var_values[12] + .1
+    var_values[8] <- var_values[10] + .1    
+    df <- rbind(df, data.frame(matrix(var_values, nc = vars)))
+  }
+  
 }
 
 df["label"] <- labels
