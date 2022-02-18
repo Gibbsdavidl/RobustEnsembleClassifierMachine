@@ -33,7 +33,7 @@ ann$build_label_ensemble(size=5,
                          nthreads = 4, 
                          objective = "binary:logistic")$
     train_models(0.6)$
-    predict_ensemble(ann$train_data, 'median')$
+    ensemble_predict(ann$train_data, 'median')$
     # then we build the output layer
     build_final_ensemble(size=5, 
                          max_depth=7, 
@@ -50,14 +50,13 @@ ann$build_label_ensemble(size=5,
 # https://www.kaggle.com/merishnasuwal/breast-cancer-prediction-dataset #
 ann$test_data_setup(
   file_name='data/bcp_test_data.csv', 
-  sep=',', 
   label_name='Class', 
   drop_list=c('Sample code number'))
 
-ann$predict_final(ann$test_data, 'median')
+ann$predict(ann$test_data, 'median')
 
 
-metrics <- ann$final_classification_metrics(ann$test_label)
+metrics <- ann$final_classification_metrics()
 print(metrics)
 
 

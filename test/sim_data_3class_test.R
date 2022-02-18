@@ -28,9 +28,10 @@ ann$final_classification_metrics() %>% print()
 # NOW we'll get the test data set up and make predictions
 ann$test_data_setup(
   file_name='data/sim_data_3classes_test.csv',
-  sep=',', 
-  label_name='label', 
-  drop_list=NULL)$predict_final(ann$test_data, 'median')
+  label_name='label')
+
+# make the predictions
+ann$predict(ann$test_data, 'median')
 
 # metrics on the test set.
 ann$final_classification_metrics() %>% print()

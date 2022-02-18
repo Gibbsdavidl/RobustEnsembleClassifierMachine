@@ -20,7 +20,7 @@ library(xgboost)
 #' 
 #' ann$train_models(0.6)
 #' 
-#' ann$predict_ensemble(ann$train_data, 'median')
+#' ann$ensemble_predict(ann$train_data, 'median')
 #'
 Ensbl <- R6Class("Ensbl",
                 public = list(
@@ -172,7 +172,7 @@ Ensbl <- R6Class("Ensbl",
                   
                   
                   
-                  ensemble_predict = function(data, combine_function){
+                  member_predict = function(data, combine_function){
                     # for each member of the ensemble
                     for (i in 1:self$size) {
                       # make a prediction on this data

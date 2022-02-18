@@ -32,7 +32,7 @@ ann$build_label_ensemble(size=5,
 
 # and training and predicting on the training data
 ann$train_models(0.6)
-ann$predict_ensemble(ann$train_data, 'median')
+ann$ensemble_predict(ann$train_data, 'median')
 
 
 # then we build the output layer
@@ -42,7 +42,7 @@ ann$build_final_ensemble(size=5,
 
 # and train it on the output of the previous layer
 ann$train_final(0.6)
-ann$predict_final(ann$test_data, 'median')
+ann$predict(ann$test_data, 'median')
 
 # now we're ready to make some predictions on the test data
 print("The '4' label predictor error:")
@@ -51,6 +51,6 @@ ann$print_error(ann$test_label, '4', 0.5)
 print("\nThe '2' label predictor error:")
 ann$print_error(ann$test_label, '2', 0.5)
 
-print("\nThe final output predictor error:")
-ann$print_final_error(ann$test_label, 0.5)
+print("\nThe final output:")
+print(ann$final_classification_metrics())
 

@@ -100,7 +100,7 @@ Recm <- R6Class("Recm",
                     #' @param file_name The name of the file.
                     #' @param sep The separting character ',' or '\t'
                     read_data = function(file_name, sep, header) {
-                      self$file_name <- file_name
+                      self$file_name <- file_name 
                       self$data <- data.table::fread(file=file_name, sep=sep, header=T)
                       colnames(self$data) <- gsub(" ", "_", colnames(self$data))
                       return(invisible(self))
@@ -167,6 +167,15 @@ Recm <- R6Class("Recm",
                                           data_split=NULL){
                       # First reading it in
                       self$file_name <- file_name
+                      if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
+                        sep = ','
+                      }
+                      else if (is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
+                        sep = '\t'
+                      } else if (is.null(sep)) {
+                        stop('Please specify the sep parameter... or use a .csv or .tsv file.')
+                      }
+                      
                       self$data <- data.table::fread(file=file_name, sep=sep, header=T)
                       # fix any spaces in the column names
                       # then apply with those names
@@ -211,6 +220,14 @@ Recm <- R6Class("Recm",
                                                 drop_list=NULL){
                       #READING DATA
                       self$file_name <- file_name
+                      if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
+                        sep = ','
+                      }
+                      else if (is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
+                        sep = '\t'
+                      } else if (is.null(sep)) {
+                        stop('Please specify the sep parameter... or use a .csv or .tsv file.')
+                      }
                       self$train_data <- data.table::fread(file=file_name, sep=sep, header=T)
                       # fix any spaces in the column names
                       colnames(self$train_data) <- gsub(" ", "_", colnames(self$train_data))
@@ -245,6 +262,14 @@ Recm <- R6Class("Recm",
                                                drop_list=NULL){
                       #READ DATA
                       self$file_name <- file_name
+                      if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
+                        sep = ','
+                      }
+                      else if (is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
+                        sep = '\t'
+                      } else if (is.null(sep)) {
+                        stop('Please specify the sep parameter... or use a .csv or .tsv file.')
+                      }
                       self$test_data <- data.table::fread(file=file_name, sep=sep, header=T)
                       # fix any spaces in the column names
                       colnames(self$test_data) <- gsub(" ", "_", colnames(self$test_data))
@@ -413,12 +438,12 @@ Recm <- R6Class("Recm",
                     
                     
                     
-                    predict_ensemble = function(data, combine_function) {
+                    ensemble_predict = function(data, combine_function) {
                       if (all(class(data)[1] == 'matrix') == FALSE) {
                         data <- as.matrix(data)
                       }
                       for (li in self$unique_labels) {
-                        self$ensbl[[li]]$ensemble_predict(data, combine_function)
+                        (self$ensbl[[li]])$member_predict(data, combine_function)
                       }
                       return(invisible(self))
                     },
@@ -426,14 +451,14 @@ Recm <- R6Class("Recm",
                     
                     
                     # predict final uses predictions from predict_ensemble
-                    predict_final = function(data, combine_function) {
-                      self$predict_ensemble(data, combine_function)
+                    predict = function(data, combine_function) {
+                      self$ensemble_predict(data, combine_function)
                       self$build_pred_table()
 
                       # then we should have a new pred_table from the data
                       pred_matrix <- as.matrix(self$pred_table)
                       
-                      self$ensbl[['final']]$ensemble_predict(pred_matrix, combine_function)
+                      self$ensbl[['final']]$member_predict(pred_matrix, combine_function)
                       return(invisible(self))
                     },
                     
@@ -564,7 +589,7 @@ Recm <- R6Class("Recm",
                       self$train_models(train_perc)
                       
                       # then make a prediction on the training data
-                      self$predict_ensemble(self$train_data, combine_function = combine_function)
+                      self$ensemble_predict(self$train_data, combine_function = combine_function)
                       
                       # build the output predictor
                       self$build_final_ensemble(size=size, 
@@ -578,7 +603,7 @@ Recm <- R6Class("Recm",
                       self$train_final(train_perc)
                       
                       # and finally, make a prediction on some training data.
-                      self$predict_final(self$test_data, combine_function)
+                      self$predict(self$test_data, combine_function)
 
                     }
                     

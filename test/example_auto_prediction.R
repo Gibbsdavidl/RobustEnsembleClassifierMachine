@@ -11,7 +11,6 @@ sigs = list(Sig1=c('Uniformity of Cell Shape','Uniformity of Cell Size', 'Margin
             Sig3=c('Bland Chromatin', 'Mitoses'))
 
 ann$autopred(data_file='data/Breast Cancer Prediction.csv',
-             sep=',',
              label_name='Class',
              drop_list = c('Sample code number'),
              data_split=0.60,
@@ -26,4 +25,4 @@ ann$autopred(data_file='data/Breast Cancer Prediction.csv',
              train_perc=0.5,
              combine_function='median')
 
-print(ann$final_classification_metrics(ann$test_label))
+print(ann$final_classification_metrics())
