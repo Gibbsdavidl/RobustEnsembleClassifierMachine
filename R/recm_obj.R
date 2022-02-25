@@ -139,7 +139,6 @@ Recm <- R6Class("Recm",
                         self$test_data <- this_deng$data_eng(self$test_data)
                       } else if (data_source == 'data') {
                         self$data <- this_deng$data_eng(self$data)
-                        print(dim(self$data))
                       } else {
                         stop('ERROR: data source must be train, test, or data.')
                       }
@@ -178,13 +177,16 @@ Recm <- R6Class("Recm",
                       # INITIAL setup
                       self$data_mode <- data_mode
                       self$signatures <- signatures
-                      if (is.null(label_name) || is.null(drop_list)) {
-                        stop("Make sure label_name and drop_list are not null!")
+                      if (is.null(label_name)) {
+                        stop("Make sure label_name is not null!")
                       } else {
-                        self$train_label <- sapply(self$train_data[[label_name]], as.character)
+                        self$label <- sapply(self$data[[label_name]], as.character)
                         label_name <- gsub(' ', '_', label_name)
+                      }
+                      if (!is.null(drop_list)) {
                         drop_list <- gsub(' ', '_', drop_list)
                       }
+                      
                       
                       if (!label_name %in% colnames(self$data)) {
                         stop('Make sure the label name matches one of the columns!')
@@ -192,9 +194,9 @@ Recm <- R6Class("Recm",
                         set(self$data, j = label_name, value = NULL)
                       }
 
-                      if (all(sapply(drop_list, function(a) a %in% colnames(self$data)))) {
+                      if ((!is.null(drop_list)) & all(sapply(drop_list, function(a) a %in% colnames(self$data)))) {
                         set(self$data, j = drop_list, value = NULL)
-                      } else {
+                      } else if ((!is.null(drop_list))) {
                         stop('Make sure the drop_list contains column names found in the data!')
                       }
                       
@@ -213,6 +215,7 @@ Recm <- R6Class("Recm",
                       self$test_label <- self$label[jdx]
                       # and record the unique categories in labels 
                       self$unique_labels <- unique(self$train_label)
+                      
                       return(invisible(self))
                     },
                     
@@ -243,26 +246,28 @@ Recm <- R6Class("Recm",
                       self$data_mode <- data_mode
                       self$signatures <- signatures
                       
-                      if (is.null(label_name) || is.null(drop_list)) {
-                        print("NULL label_name")
-                        stop("Make sure label_name and drop_list are not null!")
+                      if (is.null(label_name)) {
+                        stop("Make sure label_name is not null!")
                       } else {
                         self$train_label <- sapply(self$train_data[[label_name]], as.character)
                         label_name <- gsub(' ', '_', label_name)
+                      }
+                      if (!is.null(drop_list)) {
                         drop_list <- gsub(' ', '_', drop_list)
                       }
                       
-                      if (!label_name %in% colnames(self$data)) {
+                      if (!label_name %in% colnames(self$train_data)) {
                         stop('Make sure the label name matches one of the columns!')
                       } else {
                         set(self$train_data, j = label_name, value = NULL)
                       }
                       
-                      if (all(sapply(drop_list, function(a) a %in% colnames(self$data)))) {
+                      if ((!is.null(drop_list)) & all(sapply(drop_list, function(a) a %in% colnames(self$train_data)))) {
                         set(self$train_data, j = drop_list, value = NULL)
-                      } else {
+                      } else if ((!is.null(drop_list))) {
                         stop('Make sure the drop_list contains column names found in the data!')
                       }
+                      
                       
                       # grab the original data column names
                       self$data_colnames <- colnames(self$train_data)
@@ -296,11 +301,14 @@ Recm <- R6Class("Recm",
                       # fix any spaces in the column names
                       colnames(self$test_data) <- gsub(" ", "_", colnames(self$test_data))
                       # INITIAL setup
-                      if (is.null(label_name) || is.null(drop_list)) {
-                        stop("Make sure label_name and drop_list are not null!")
+                      if (is.null(label_name)) {
+                        stop("Make sure label_name is not null!")
                       } else {
-                        self$train_label <- sapply(self$train_data[[label_name]], as.character)
+                        self$test_label <- sapply(self$test_data[[label_name]], as.character)
                         label_name <- gsub(' ', '_', label_name)
+                      }
+                      
+                      if (!is.null(drop_list)) {
                         drop_list <- gsub(' ', '_', drop_list)
                       }
                       
@@ -310,11 +318,12 @@ Recm <- R6Class("Recm",
                         set(self$test_data, j = label_name, value = NULL)
                       }
                       
-                      if (all(sapply(drop_list, function(a) a %in% colnames(self$test_data)))) {
+                      if ((!is.null(drop_list)) & all(sapply(drop_list, function(a) a %in% colnames(self$test_data)))) {
                         set(self$test_data, j = drop_list, value = NULL)
-                      } else {
+                      } else if ((!is.null(drop_list))) {
                         stop('Make sure the drop_list contains column names found in the data!')
                       }
+                      
                       
                       # check that the data column names are the same as used in training
                       if (!all(colnames(self$test_data) %in% self$data_colnames)) {
@@ -362,29 +371,22 @@ Recm <- R6Class("Recm",
                     #' max_depth = 7, eta = 0.3, nrounds = 5,
                     #' nthreads = 4, objective = "binary:logistic")
                     #'
-                    build_label_ensemble = function(
-                                              size, 
-                                              max_depth, 
-                                              eta, 
-                                              nrounds,
-                                              nthreads, 
-                                              objective) {
+                    build_label_ensemble = function(size,
+                                                    params) {
                       
                       # for each category
                       for (li in self$unique_labels) {
+                        
                         # first create the binarized label
                         bin_label <- self$binarize_label(label=self$train_label, x=li)
                         # then create the classifier object
-                        self$ensbl[[li]] <- Ensbl$new(li, 
-                                                      'ensemble',
-                                                      size, 
-                                                      self$train_data,
-                                                      bin_label, 
-                                                      max_depth, 
-                                                      eta, 
-                                                      nrounds,
-                                                      nthreads,
-                                                      objective)
+
+                        self$ensbl[[li]] <- Ensbl$new(name=li, 
+                                                      obj_mode='ensemble',
+                                                      size=size, 
+                                                      data=self$train_data,
+                                                      label=bin_label, 
+                                                      params=params)
                         
                       }
                       return(invisible(self))
@@ -395,7 +397,7 @@ Recm <- R6Class("Recm",
                     build_pred_table = function() {
                       final_train_data <- list()
                       for (li in self$unique_labels) {
-                        final_train_data[[li]] <- ann$ensbl[[li]]$pred_combined
+                        final_train_data[[li]] <- self$ensbl[[li]]$pred_combined
                       }
                       
                       self$pred_table <- do.call(cbind.data.frame, final_train_data)
@@ -429,11 +431,7 @@ Recm <- R6Class("Recm",
                     
                     build_final_ensemble = function(
                                                 size, 
-                                                max_depth, 
-                                                eta, 
-                                                nrounds,
-                                                nthreads, 
-                                                objective) {
+                                                params) {
                       # here the ensemble will be trained on the prior predictions
                       # for each category, get the predictions
                       # turn that into a dataframe / matrix
@@ -442,16 +440,13 @@ Recm <- R6Class("Recm",
                       #print(head(self$train_label))
                       #print(head(remapped_label))
                       # train a XGBoost that takes multiple labels.
-                      self$ensbl[["final"]] <- Ensbl$new("final",
-                                                      "final",
-                                                      size, 
-                                                      self$pred_table,
-                                                      remapped_label, 
-                                                      max_depth, 
-                                                      eta, 
-                                                      nrounds,
-                                                      nthreads,
-                                                      objective
+
+                      self$ensbl[["final"]] <- Ensbl$new(name="final",
+                                                         obj_mode="final",
+                                                         size=size, 
+                                                         data=self$pred_table,
+                                                         label=remapped_label, 
+                                                         params=params
                                                     )
                       return(invisible(self))
                     },
@@ -594,11 +589,7 @@ Recm <- R6Class("Recm",
                                         data_mode=NULL,
                                         signatures=NULL,
                                         size=NULL,
-                                        max_depth=NULL,
-                                        eta=NULL,
-                                        nrounds=NULL,
-                                        nthreads=NULL,
-                                        objective=NULL,
+                                        params=NULL,
                                         train_perc=NULL,
                                         combine_function=NULL
                                       ) {
@@ -613,27 +604,27 @@ Recm <- R6Class("Recm",
                                      drop_list=drop_list, 
                                      data_split=data_split)
                       
+                      params[['objective']] <- "binary:logistic"
+                      params[['eval_metric']] <-'logloss'
+                      
                       # build the initial set of predictors
                       self$build_label_ensemble(size=size, 
-                                                max_depth = max_depth, 
-                                                eta = eta, 
-                                                nrounds = nrounds,
-                                                nthreads = nthreads, 
-                                                objective = objective)
+                                                params=params)
                       
                       # and train them using a random selection of data
                       self$train_models(train_perc)
                       
                       # then make a prediction on the training data
-                      self$ensemble_predict(self$train_data, combine_function = combine_function)
+                      self$ensemble_predict(self$train_data, 
+                                            combine_function = combine_function)
+                      
+                      final_params <- params
+                      final_params[['objective']] <- 'multi:softmax'
+                      final_params[['eval_metric']] <- 'mlogloss'
                       
                       # build the output predictor
                       self$build_final_ensemble(size=size, 
-                                                max_depth=max_depth, 
-                                                eta=eta, 
-                                                nrounds=nrounds,
-                                                nthreads = nthreads, 
-                                                objective = 'multi:softmax')
+                                                final_params)
 
                       # and use the earlier training predictions to train the output                      
                       self$train_final(train_perc)

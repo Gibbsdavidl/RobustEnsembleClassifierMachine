@@ -24,44 +24,40 @@ library(xgboost)
 #'
 Ensbl <- R6Class("Ensbl",
                 public = list(
-                  bstl = list(),  # booster list
-                  name = NULL,
-                  obj_mode = NULL,
-                  size  = NULL,
-                  perc = NULL,
-                  data = NULL, 
-                  label = NULL, 
-                  max_depth = NULL, 
-                  eta = NULL, 
-                  nrounds = NULL,
-                  nthreads = NULL, 
-                  objective = NULL,
-                  preds = NULL,
-                  pred_table = NULL,
-                  pred_combined = NULL,
+                  bstl = list(),   # booster list
+                  name = NULL,     # name of this member
+                  obj_mode = NULL, 
+                  size  = NULL,    # number of xgboost predictors
+                  perc = NULL,     # percent of data to sample
+                  data = NULL,     # the data to train from
+                  label = NULL,    # the label vector 
+                  params = NULL,   # parameters to train xgboost
+                  nrounds=NULL,
+                  nthreads=NULL,
+                  verbose=NULL,
+                  preds = NULL,    # predictions made, as list
+                  pred_table = NULL,  # table of predictions
+                  pred_combined = NULL, # combined predictions
                   
                   initialize = function(name,
                                         obj_mode,
                                         size, 
                                         data, 
                                         label, 
-                                        max_depth, 
-                                        eta, 
-                                        nrounds,
-                                        nthreads, 
-                                        objective) {
+                                        params) {
                     self$name <- name
                     self$obj_mode <- obj_mode
                     self$size <- size
                     self$data <- data 
                     self$label <- label 
-                    self$max_depth <- max_depth
-                    self$eta <- eta
-                    self$nrounds <- nrounds
-                    self$nthreads <- nthreads 
-                    self$objective <- objective
+                    self$nrounds <- params[['nrounds']]
+                    self$nthreads <- params[['nthreads']]
+                    self$verbose <- params[['verbose']]
+                    self$params <- params
                     self$preds = list()
-                    
+                    self$params[['nrounds']] <- NULL
+                    self$params[['nthreads']] <- NULL
+                    self$params[['verbose']] <- NULL
                   },
                   
                   
@@ -76,6 +72,7 @@ Ensbl <- R6Class("Ensbl",
                   sample_data = function(perc) {
                     res0 <- list()
                     # make the data list
+                    
                     if (perc < 1.0) {
                       ## generate random index
                       idx <- sample.int(n = nrow(self$data), size = perc*nrow(self$data), replace = F)
@@ -84,8 +81,10 @@ Ensbl <- R6Class("Ensbl",
                     } else {
                       res0[['data']] <- as.matrix(self$data)
                       res0[['label']] <- as.vector(self$label)
-                    }                   
-                    res0
+                    } 
+                    
+                    return(res0)
+                    
                   },
                   
                   
@@ -96,34 +95,26 @@ Ensbl <- R6Class("Ensbl",
                     for (i in 1:self$size) {
                       
                       # sub-sample the data
-                      sdat <- self$sample_data(perc)
-                      
+                      sdat  <- self$sample_data(perc)
                       n_classes <- length(unique(sdat[['label']]))
                       
+                      dtrain <- xgb.DMatrix(data=sdat[['data']], 
+                                            label = sdat[['label']],
+                                            nthread=self$nthreads)
+                      
                       if (self$obj_mode != 'final') {
-                        self$bstl[[i]] <- xgboost(data = sdat[['data']], 
-                                                  label = sdat[['label']], 
-                                                  max_depth = self$max_depth, 
-                                                  eta = self$eta, 
-                                                  nrounds = self$nrounds,
-                                                  nthread = self$nthreads, 
-                                                  objective = self$objective, 
-                                                  eval_metric='logloss', #rmse',  # mlogloss
-                                                  early_stopping_rounds=2,
-                                                  verbose = 0)
+                        self$bstl[[i]] <- xgboost(params=self$params, 
+                                                  dtrain, 
+                                                  nrounds=self$nrounds,
+                                                  verbose = self$verbose)
                       } else {
                         # it's multiclass final 
-                        self$bstl[[i]] <- xgboost(data = sdat[['data']], 
-                                                  label = sdat[['label']], 
-                                                  max_depth = self$max_depth, 
-                                                  eta = self$eta, 
-                                                  nrounds = self$nrounds,
-                                                  nthread = self$nthreads, 
-                                                  objective = self$objective, 
-                                                  eval_metric='mlogloss',  # mlogloss rmse
-                                                  early_stopping_rounds=2,
-                                                  num_class=n_classes,
-                                                  verbose=0)
+                        self$params[['num_class']] <- n_classes
+                        
+                        self$bstl[[i]] <- xgboost(params=self$params, 
+                                                  dtrain, 
+                                                  nrounds=self$nrounds,
+                                                  verbose = self$verbose)
                         
                       }
 

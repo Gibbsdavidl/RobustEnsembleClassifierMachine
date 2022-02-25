@@ -76,6 +76,11 @@ test_that("data is split correctly", {
 test_that("data_mode, label_name, and drop_list errors are caught", {
 
   anne <- Recm$new("Anne")
+  params <- list(max_depth=6,
+                 eta=0.1,
+                 nrounds=5,
+                 nthreads=4,
+                 verbose=0)
   
   expect_error(
     anne$autopred(data_file='../../data/bcp_train_data.csv',
@@ -85,11 +90,7 @@ test_that("data_mode, label_name, and drop_list errors are caught", {
                  data_mode=c('___sigpairs___', 'quartiles'), # c('original', 'ranks', 'pairs'), # 'sigpairs'
                  signatures=NULL,
                  size=8,
-                 max_depth=6,
-                 eta=0.1,
-                 nrounds=5,
-                 nthreads=4,
-                 objective="binary:logistic",
+                 params=params,
                  train_perc=0.5,
                  combine_function='median'),
     'data_mode, wrong value'
@@ -143,7 +144,7 @@ test_that("Label NULL values are caught", {
                     label_name=NULL, 
                     drop_list='Sample code number', 
                     data_split=0.6),
-    "Make sure label_name and drop_list are not null!"
+    "Make sure label_name is not null!"
   )    
 })
 
