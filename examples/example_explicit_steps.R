@@ -11,6 +11,9 @@
 
 # library(RobustEnsembleClassifierMachine)
 source('R/recm_obj.R')
+source('R/enbl_obj.R')
+source('R/deng_obj.R')
+source('R/util_fun.R')
 
 # The object's name is Ann, OK?
 ann <- Recm$new("Ann")

@@ -5,18 +5,9 @@ library(R6)
 library(data.table)
 library(dplyr)
 
-source('R/enbl_obj.R')
-source('R/deng_obj.R')
+#source('R/enbl_obj.R')
+#source('R/deng_obj.R')
 
-# bin data vectors into 4 levels
-data_bin_4 <- function(x) {
-  p = quantile(x)
-  if (any(table(p) > 1)) {
-    # then we have duplicate levels
-    p <- unique(p)
-  }
-  as.numeric(cut(x, breaks=p, include.lowest = T))
-}
 
 #' Recm  Robust ensemble classifier machine (Recm)
 #' 
@@ -84,7 +75,7 @@ Recm <- R6Class("Recm",
                     #' @return A new `recm` object.
                     initialize = function(name = NA) {
                       self$name <- name
-                      self$greet()
+                      #self$greet()
                     },
                     
                     
@@ -121,6 +112,7 @@ Recm <- R6Class("Recm",
                     #' @description Reads the data file.
                     #' @param file_name The name of the file.
                     #' @param sep The separting character ',' or '\t'
+                    #' @param header boolean, whether the table has a header line
                     read_test_data = function(file_name, sep, header) {
                       self$file_name <- file_name
                       self$test_data <- data.table::fread(file=file_name, sep=sep, header=T)
@@ -155,6 +147,9 @@ Recm <- R6Class("Recm",
                     
 
                     #' @description Does some setup processing on the data file, drop columns, split data into train and test, and identify the label column.
+                    #' @param file_name string, the name of the file
+                    #' @param sep string, the separating character
+                    #' @param data_mode string, 
                     #' @param label_name string, the column name indicating the target label
                     #' @param drop_list a vector of strings indicating what columns to drop
                     #' @param data_split numeric value, the percent of data to use in training 
@@ -183,13 +178,26 @@ Recm <- R6Class("Recm",
                       # INITIAL setup
                       self$data_mode <- data_mode
                       self$signatures <- signatures
-                      self$label <- sapply(self$data[[label_name]], as.character)
-                      label_name <- gsub(' ', '_', label_name)
-                      self$data[, (label_name):=NULL]
-                      if (!is.null(drop_list)) {
+                      if (is.null(label_name) || is.null(drop_list)) {
+                        stop("Make sure label_name and drop_list are not null!")
+                      } else {
+                        self$train_label <- sapply(self$train_data[[label_name]], as.character)
+                        label_name <- gsub(' ', '_', label_name)
                         drop_list <- gsub(' ', '_', drop_list)
-                        self$data[, (drop_list):=NULL]
                       }
+                      
+                      if (!label_name %in% colnames(self$data)) {
+                        stop('Make sure the label name matches one of the columns!')
+                      } else {
+                        set(self$data, j = label_name, value = NULL)
+                      }
+
+                      if (all(sapply(drop_list, function(a) a %in% colnames(self$data)))) {
+                        set(self$data, j = drop_list, value = NULL)
+                      } else {
+                        stop('Make sure the drop_list contains column names found in the data!')
+                      }
+                      
                       # grab the original data column names
                       self$data_colnames <- colnames(self$data)
                       # DATA ENGINEERING
@@ -234,14 +242,28 @@ Recm <- R6Class("Recm",
                       # INITIAL setup
                       self$data_mode <- data_mode
                       self$signatures <- signatures
-                      self$train_label <- sapply(self$train_data[[label_name]], as.character)
-                      label_name <- gsub(' ', '_', label_name)
-                      self$train_data[, (label_name):=NULL]
-                      # then apply with those names
-                      if (!is.null(drop_list)) {
+                      
+                      if (is.null(label_name) || is.null(drop_list)) {
+                        print("NULL label_name")
+                        stop("Make sure label_name and drop_list are not null!")
+                      } else {
+                        self$train_label <- sapply(self$train_data[[label_name]], as.character)
+                        label_name <- gsub(' ', '_', label_name)
                         drop_list <- gsub(' ', '_', drop_list)
-                        self$train_data[, (drop_list):=NULL]
                       }
+                      
+                      if (!label_name %in% colnames(self$data)) {
+                        stop('Make sure the label name matches one of the columns!')
+                      } else {
+                        set(self$train_data, j = label_name, value = NULL)
+                      }
+                      
+                      if (all(sapply(drop_list, function(a) a %in% colnames(self$data)))) {
+                        set(self$train_data, j = drop_list, value = NULL)
+                      } else {
+                        stop('Make sure the drop_list contains column names found in the data!')
+                      }
+                      
                       # grab the original data column names
                       self$data_colnames <- colnames(self$train_data)
                       # DATA ENGINEERING
@@ -274,18 +296,32 @@ Recm <- R6Class("Recm",
                       # fix any spaces in the column names
                       colnames(self$test_data) <- gsub(" ", "_", colnames(self$test_data))
                       # INITIAL setup
-                      self$test_label <- sapply(self$test_data[[label_name]], as.character)
-                      label_name <- gsub(' ', '_', label_name)
-                      self$test_data[, (label_name):=NULL]
-                      if (!is.null(drop_list)) {
+                      if (is.null(label_name) || is.null(drop_list)) {
+                        stop("Make sure label_name and drop_list are not null!")
+                      } else {
+                        self$train_label <- sapply(self$train_data[[label_name]], as.character)
+                        label_name <- gsub(' ', '_', label_name)
                         drop_list <- gsub(' ', '_', drop_list)
-                        self$test_data[, (drop_list):=NULL]
                       }
+                      
+                      if (!label_name %in% colnames(self$test_data)) {
+                        stop('Make sure the label name matches one of the columns!')
+                      } else {
+                        set(self$test_data, j = label_name, value = NULL)
+                      }
+                      
+                      if (all(sapply(drop_list, function(a) a %in% colnames(self$test_data)))) {
+                        set(self$test_data, j = drop_list, value = NULL)
+                      } else {
+                        stop('Make sure the drop_list contains column names found in the data!')
+                      }
+                      
                       # check that the data column names are the same as used in training
                       if (!all(colnames(self$test_data) %in% self$data_colnames)) {
                         print(self$data_colnames)
                         stop('Test data column names must match what was used in training.')
                       }
+                      
                       # DATA ENGINEERING
                       self$data_eng('test')
                       # and record the unique categories in labels 

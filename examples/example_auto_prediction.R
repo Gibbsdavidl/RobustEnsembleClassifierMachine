@@ -3,6 +3,9 @@
 # Example using the autopred (auto-prediction) function.
 
 source('R/recm_obj.R')
+source('R/util_fun.R')
+source('R/deng_obj.R')
+source('R/enbl_obj.R')
 
 ann <- Recm$new("Ann")
 

@@ -47,12 +47,10 @@ Deng <- R6Class("Deng",
                     newdat <- data.table()
                     
                     if ('original' %in% self$data_mode) {
-                      print("*** Keeping Orig. Data ***")
                       newdat <- cbind(newdat, data)
                     }
                     
                     if ('quartiles' %in% self$data_mode) {
-                      print("*** BUILDING QUARTILES ***")
                       cols <- colnames(data)
                       quartdat <- data[ , (cols) := lapply(.SD, "data_bin_4"), .SDcols = cols]
                       colnames(quartdat) <- sapply(cols, function(a) paste0(a,'_quartile',collapse = ''))
@@ -60,7 +58,6 @@ Deng <- R6Class("Deng",
                     } 
                     
                     if ('ranks' %in% self$data_mode) {
-                      print("*** RANKING DATA ***")
                       cols <- colnames(data)
                       rankdat <- data[ , (cols) := lapply(.SD, "rank", ties.method="min"), .SDcols = cols]
                       colnames(rankdat) <- sapply(cols, function(a) paste0(a,'_ranked',collapse = ''))
@@ -68,7 +65,6 @@ Deng <- R6Class("Deng",
                     }
                     
                     if ('pairs' %in% self$data_mode) {
-                      print("*** PROCESSING DATA: PAIRS ***")
                       # if mode includes 'pairs' then we need to make var-pairs
                       newcol_names <- c()
                       newcol_dat <- list()
@@ -86,7 +82,6 @@ Deng <- R6Class("Deng",
                     }
                     
                     if ('sigpairs' %in% self$data_mode) {
-                      print("*** COMPUTING SIGNATURE PAIRS ***")
                       if (is.null(self$signatures)) {
                         stop("Signatures is null in data eng obj. Please include signatures.")
                       }

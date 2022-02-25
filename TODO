@@ -6,7 +6,9 @@ TODO
 
 * more error catching functions.
   
+* plot ROCs for each factor
 
+* get ranked list of predictors across factors and final stages.
 
 COMPLETE  
 
