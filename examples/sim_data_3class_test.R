@@ -19,6 +19,7 @@ params <- list(max_depth=6,
 # this will train the classifier and test it on a small 20% split
 anne$autopred(data_file='data/sim_data_3classes_train.csv',
              label_name='label',
+             sample_id=NULL,
              data_split=0.80,
              data_mode=c('pairs'), #'quartiles', 'original', 'ranks', 'pairs', 'sigpairs'
              size=7,
@@ -33,7 +34,8 @@ anne$final_classification_metrics() %>% print()
 # NOW we'll get the test data set up and make predictions
 anne$test_data_setup(
   file_name='data/sim_data_3classes_test.csv',
-  label_name='label')
+  label_name='label',
+  sample_id=NULL)
 
 # make the predictions
 anne$predict(anne$test_data, 'median')
@@ -41,4 +43,8 @@ anne$predict(anne$test_data, 'median')
 # metrics on the test set.
 print("New Data")
 anne$final_classification_metrics() %>% print()
+
+# return the results
+print(head(anne$results()))
+
 

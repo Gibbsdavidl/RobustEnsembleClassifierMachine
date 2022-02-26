@@ -40,6 +40,18 @@ Recm <- R6Class("Recm",
                     #' @field the data column used as label, the target
                     label = NULL,
                     
+                    #' @sample_id the data column used as label, the target
+                    sample_id = NULL,
+                    
+                    #' @sample_ids the data column used as label, the target
+                    sample_ids = NULL,
+                    
+                    #' @train_sample_ids the sample IDs used in training data
+                    train_sample_ids = NULL,
+
+                    #' @test_sample_ids the sample IDs used in test data
+                    test_sample_ids = NULL,
+                    
                     #' @field data_split numeric value indicating percent data to make into training data
                     data_split = NULL,
                     
@@ -157,10 +169,14 @@ Recm <- R6Class("Recm",
                                           data_mode=NULL, 
                                           signatures=NULL, 
                                           label_name=NULL, 
+                                          sample_id=NULL,
                                           drop_list=NULL, 
                                           data_split=NULL){
                       # First reading it in
                       self$file_name <- file_name
+                      self$data_mode <- data_mode
+                      self$signatures <- signatures
+                      
                       if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
                         sep = ','
                       }
@@ -171,22 +187,27 @@ Recm <- R6Class("Recm",
                       }
                       
                       self$data <- data.table::fread(file=file_name, sep=sep, header=T)
-                      # fix any spaces in the column names
-                      # then apply with those names
+                      self$data_colnames <- colnames(self$data)
                       colnames(self$data) <- gsub(" ", "_", colnames(self$data))
-                      # INITIAL setup
-                      self$data_mode <- data_mode
-                      self$signatures <- signatures
+                      
                       if (is.null(label_name)) {
                         stop("Make sure label_name is not null!")
                       } else {
                         self$label <- sapply(self$data[[label_name]], as.character)
                         label_name <- gsub(' ', '_', label_name)
                       }
+                      
+                      if ((!is.null(sample_id)) && sample_id %in% self$data_colnames) {
+                        self$sample_id <- gsub(' ', '_', sample_id)
+                        self$sample_ids <- sapply(self$data[[self$sample_id]], as.character)
+                        set(self$data, j = self$sample_id, value = NULL)  # then del it
+                      } else {
+                        self$sample_ids <- 1:nrow(self$data)
+                      }
+                      
                       if (!is.null(drop_list)) {
                         drop_list <- gsub(' ', '_', drop_list)
                       }
-                      
                       
                       if (!label_name %in% colnames(self$data)) {
                         stop('Make sure the label name matches one of the columns!')
@@ -194,14 +215,12 @@ Recm <- R6Class("Recm",
                         set(self$data, j = label_name, value = NULL)
                       }
 
-                      if ((!is.null(drop_list)) & all(sapply(drop_list, function(a) a %in% colnames(self$data)))) {
+                      if ((!is.null(drop_list)) && all(sapply(drop_list, function(a) a %in% colnames(self$data)))) {
                         set(self$data, j = drop_list, value = NULL)
                       } else if ((!is.null(drop_list))) {
                         stop('Make sure the drop_list contains column names found in the data!')
                       }
                       
-                      # grab the original data column names
-                      self$data_colnames <- colnames(self$data)
                       # DATA ENGINEERING
                       self$data_eng('data')
                       # to split the data into training and test components
@@ -211,8 +230,10 @@ Recm <- R6Class("Recm",
                       # then create the data sets
                       self$train_data <- self$data[idx,]
                       self$train_label <- self$label[idx]
+                      self$train_sample_ids <- self$sample_ids[idx]
                       self$test_data <- self$data[jdx,]
                       self$test_label <- self$label[jdx]
+                      self$test_sample_ids <- self$sample_ids[jdx]
                       # and record the unique categories in labels 
                       self$unique_labels <- unique(self$train_label)
                       
@@ -228,9 +249,13 @@ Recm <- R6Class("Recm",
                                                 data_mode=NULL, 
                                                 signatures=NULL, 
                                                 label_name=NULL, 
+                                                sample_id=NULL, 
                                                 drop_list=NULL){
                       #READING DATA
                       self$file_name <- file_name
+                      self$data_mode <- data_mode
+                      self$signatures <- signatures
+                      
                       if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
                         sep = ','
                       }
@@ -239,38 +264,41 @@ Recm <- R6Class("Recm",
                       } else if (is.null(sep)) {
                         stop('Please specify the sep parameter... or use a .csv or .tsv file.')
                       }
+                      
                       self$train_data <- data.table::fread(file=file_name, sep=sep, header=T)
+                      # grab the original data column names
+                      self$data_colnames <- colnames(self$train_data)
                       # fix any spaces in the column names
                       colnames(self$train_data) <- gsub(" ", "_", colnames(self$train_data))
-                      # INITIAL setup
-                      self$data_mode <- data_mode
-                      self$signatures <- signatures
                       
                       if (is.null(label_name)) {
                         stop("Make sure label_name is not null!")
                       } else {
-                        self$train_label <- sapply(self$train_data[[label_name]], as.character)
-                        label_name <- gsub(' ', '_', label_name)
-                      }
-                      if (!is.null(drop_list)) {
-                        drop_list <- gsub(' ', '_', drop_list)
+                        if (!label_name %in% colnames(self$train_data)) {
+                          stop('Make sure the label name matches one of the columns!')
+                        } else {
+                          label_name <- gsub(' ', '_', label_name)
+                          self$train_label <- sapply(self$train_data[[label_name]], as.character)
+                          set(self$train_data, j = label_name, value = NULL)
+                        }
                       }
                       
-                      if (!label_name %in% colnames(self$train_data)) {
-                        stop('Make sure the label name matches one of the columns!')
+                      if ((!is.null(sample_id)) && sample_id %in% self$data_colnames) {
+                        self$sample_id <- gsub(' ', '_', sample_id)
+                        self$train_sample_ids <- sapply(self$train_data[[self$sample_id]], as.character)
+                        set(self$train_data, j = self$sample_id, value = NULL)  # then del it
                       } else {
-                        set(self$train_data, j = label_name, value = NULL)
+                        self$train_sample_ids <- 1:nrow(self$train_data)
                       }
                       
-                      if ((!is.null(drop_list)) & all(sapply(drop_list, function(a) a %in% colnames(self$train_data)))) {
+                      
+                      if ((!is.null(drop_list)) && all(sapply(drop_list, function(a) a %in% self$data_colnames))) {
+                        drop_list <- gsub(' ', '_', drop_list)
                         set(self$train_data, j = drop_list, value = NULL)
                       } else if ((!is.null(drop_list))) {
                         stop('Make sure the drop_list contains column names found in the data!')
                       }
                       
-                      
-                      # grab the original data column names
-                      self$data_colnames <- colnames(self$train_data)
                       # DATA ENGINEERING
                       self$data_eng('train')
                       # and record the unique categories in labels 
@@ -286,6 +314,7 @@ Recm <- R6Class("Recm",
                     test_data_setup = function(file_name=NULL, 
                                                sep=NULL, 
                                                label_name=NULL, 
+                                               sample_id=NULL, 
                                                drop_list=NULL){
                       #READ DATA
                       self$file_name <- file_name
@@ -297,46 +326,47 @@ Recm <- R6Class("Recm",
                       } else if (is.null(sep)) {
                         stop('Please specify the sep parameter... or use a .csv or .tsv file.')
                       }
+                      
                       self$test_data <- data.table::fread(file=file_name, sep=sep, header=T)
-                      # fix any spaces in the column names
-                      colnames(self$test_data) <- gsub(" ", "_", colnames(self$test_data))
-                      # INITIAL setup
+
+                      # check that the data column names are the same as used in training
+                      if (!all(colnames(self$test_data) %in% self$data_colnames)) {
+                        stop('Test data column names must match what was used in training.')
+                      } else {
+                        colnames(self$test_data) <- gsub(" ", "_", colnames(self$test_data))
+                      }
+                      
                       if (is.null(label_name)) {
-                        stop("Make sure label_name is not null!")
+                        self$test_label <- NULL  # don't have to have labels to make calls.
                       } else {
-                        self$test_label <- sapply(self$test_data[[label_name]], as.character)
-                        label_name <- gsub(' ', '_', label_name)
+                        if (!label_name %in% colnames(self$test_data)) {
+                          stop('Make sure the label name matches one of the columns!')
+                        } else {
+                          label_name <- gsub(' ', '_', label_name)
+                          self$test_label <- sapply(self$test_data[[label_name]], as.character)
+                          set(self$test_data, j = label_name, value = NULL)
+                        }
                       }
                       
-                      if (!is.null(drop_list)) {
+                      
+                      if ((!is.null(sample_id))) { # already know that the col names match
+                        test_sample_id <- gsub(' ', '_', sample_id)
+                        self$test_sample_ids <- sapply(self$test_data[[test_sample_id]], as.character)
+                        set(self$test_data, j = test_sample_id, value = NULL)  # then del it
+                      } else {
+                        self$test_sample_ids <- 1:nrow(self$test_data)
+                      }
+                      
+                      if ((!is.null(drop_list)) && all(sapply(drop_list, function(a) a %in% self$data_colnames))) {
                         drop_list <- gsub(' ', '_', drop_list)
-                      }
-                      
-                      if (!label_name %in% colnames(self$test_data)) {
-                        stop('Make sure the label name matches one of the columns!')
-                      } else {
-                        set(self$test_data, j = label_name, value = NULL)
-                      }
-                      
-                      if ((!is.null(drop_list)) & all(sapply(drop_list, function(a) a %in% colnames(self$test_data)))) {
                         set(self$test_data, j = drop_list, value = NULL)
                       } else if ((!is.null(drop_list))) {
                         stop('Make sure the drop_list contains column names found in the data!')
                       }
-                      
-                      
-                      # check that the data column names are the same as used in training
-                      if (!all(colnames(self$test_data) %in% self$data_colnames)) {
-                        print(self$data_colnames)
-                        stop('Test data column names must match what was used in training.')
-                      }
-                      
+
                       # DATA ENGINEERING
                       self$data_eng('test')
-                      # and record the unique categories in labels 
-                      if (! all(unique(self$test_label) %in% self$unique_labels)) {
-                        stop('TEST labels and training labels must be from the same set.')
-                      }
+
                       return(invisible(self))
                     },
 
@@ -537,53 +567,90 @@ Recm <- R6Class("Recm",
                     
                     
                     final_classification_metrics = function() {
-                      # first make sure our labels are mapped to integers correctly
-                      labels <- self$test_label
-
+                      
+                      if (is.null(self$test_label)) {
+                        return("No test labels.")
+                      } else {
+                        # first make sure our labels are mapped to integers correctly
+                        labels <- self$test_label
+                        
+                        # get the calls
+                        mapped_calls <- self$ensbl[['final']]$pred_combined
+                        calls <- self$unmap_multiclass_labels(mapped_calls)
+                        
+                        # then build the multi-class confusion matrix
+                        confusion_matrix <- table( labels, calls )
+                        
+                        # labels of the confusion matrix
+                        cm_labels <- rownames(confusion_matrix)
+                        
+                        # and we'll transform that into a data.frame
+                        cmdf <- as.data.frame(confusion_matrix, stringsAsFactors = F)
+                        
+                        # accuracy
+                        acc <- self$accuracy(labels, calls)
+                        
+                        # first compute precision
+                        prec <- sapply(cm_labels, function(a) self$precision(cmdf, a))
+                        
+                        # then specificity
+                        spec <- sapply(cm_labels, function(a) self$specificity(cmdf, a))
+                        
+                        # then sensitivity or recall
+                        sens <- sapply(cm_labels, function(a) self$sensitivity(cmdf, a))
+                        
+                        # then F1
+                        f1 <-(2*sens*prec) / (sens+prec)
+                        
+                        metrics <- data.frame(Label=cm_labels,
+                                              Accuracy=acc,
+                                              Sensitivity=sens,
+                                              Specificity=spec,
+                                              Precision=prec,
+                                              F1=f1,
+                                              stringsAsFactors = F)
+                        
+                        avg_row <- data.frame(Label="Average",
+                                              Accuracy=mean(metrics[,2]),
+                                              Sensitivity=mean(metrics[,3]),
+                                              Specificity=mean(metrics[,4]),
+                                              Precision=mean(metrics[,5]),
+                                              F1=mean(metrics[,6]), 
+                                              row.names = 'Average',
+                                              stringsAsFactors = F)
+                        
+                        metrics <- rbind(metrics, avg_row)
+                        
+                        return(metrics)
+                        
+                        
+                      }
+                      
+                    },
+                    
+                    
+                    
+                    results = function(include_label=NULL) {
+                      
                       # get the calls
                       mapped_calls <- self$ensbl[['final']]$pred_combined
                       calls <- self$unmap_multiclass_labels(mapped_calls)
+                      df <- data.frame(SampleIDs = self$test_sample_ids, BestCalls=calls)
+                      pred_sums <- apply(anne$pred_table, 1, sum)
+                      norm_pred_table <- t(sapply(1:nrow(anne$pred_table), function(i) anne$pred_table[i,] / pred_sums[i]))
+                      df <- cbind(df, norm_pred_table)
+                      if (!is.null(self$test_label) && include_label == TRUE) {
+                        df <- cbind(df, data.frame(Label=self$test_label))
+                      }
                       
-                      # then build the multi-class confusion matrix
-                      confusion_matrix <- table( labels, calls )
-            
-                      # labels of the confusion matrix
-                      cm_labels <- rownames(confusion_matrix)
-                      
-                      # and we'll transform that into a data.frame
-                      cmdf <- as.data.frame(confusion_matrix, stringsAsFactors = F)
-                      
-                      # accuracy
-                      acc <- self$accuracy(labels, calls)
-                      
-                      # first compute precision
-                      prec <- sapply(cm_labels, function(a) self$precision(cmdf, a))
-                      
-                      # then specificity
-                      spec <- sapply(cm_labels, function(a) self$specificity(cmdf, a))
-                      
-                      # then sensitivity or recall
-                      sens <- sapply(cm_labels, function(a) self$sensitivity(cmdf, a))
-                      
-                      # then F1
-                      f1 <-(2*sens*prec) / (sens+prec)
-                      
-                      metrics <- data.frame(Label=cm_labels,
-                                            Accuracy=acc,
-                                            Sensitivity=sens,
-                                            Specificity=spec,
-                                            Precision=prec,
-                                            F1=f1)
-                      
-                      return(metrics)
-                      
+                      return(df)
                     },
-
                     
                     
                     autopred = function(data_file=NULL,
                                         sep=NULL,
                                         label_name=NULL,
+                                        sample_id=NULL,
                                         drop_list=NULL,
                                         data_split=NULL,
                                         data_mode=NULL,
@@ -601,6 +668,7 @@ Recm <- R6Class("Recm",
                                      data_mode=data_mode,
                                      signatures=signatures,
                                      label_name=label_name, 
+                                     sample_id=sample_id,
                                      drop_list=drop_list, 
                                      data_split=data_split)
                       

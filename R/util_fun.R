@@ -1,6 +1,8 @@
 
 # Utility functions
 
+# can be quickly applied to data.table
+
 # bin data vectors into 4 levels
 data_bin_4 <- function(x) {
   p = quantile(x)

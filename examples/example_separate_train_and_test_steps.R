@@ -17,16 +17,18 @@ source('R/deng_obj.R')
 source('R/enbl_obj.R')
 
 # The object's name is Ann, OK?
-ann <- Recm$new("Ann")
+anne <- Recm$new("Anne")
 
+# first we read in some data, which is processed into robust features
 # https://www.kaggle.com/merishnasuwal/breast-cancer-prediction-dataset #
-ann$train_data_setup(
+anne$train_data_setup(
   file_name = 'data/bcp_train_data.csv', 
-  sep=',',
   data_mode='pairs',
   label_name='Class',
-  drop_list=c('Sample code number'))
+  sample_id='Sample code number'
+)
 
+# then we select our xgboost params
 params <- list(max_depth=6,
                eta=0.1,
                nrounds=5,
@@ -35,30 +37,34 @@ params <- list(max_depth=6,
 
 # building the first layer of predictors, each a binary prediction
 # on one factor in the target labels.
-ann$build_label_ensemble(size=5, 
-                         params=params)$
+# training and making predictions on the training data
+anne$build_label_ensemble(size=5, 
+                          params=params)$
     train_models(0.6)$
-    ensemble_predict(ann$train_data, 'median')
+    ensemble_predict(anne$train_data, 'median')
 
+# setting some final layer xgboost params
 final_params <- params
 final_params[['objective']] <- 'multi:softmax'
 final_params[['eval_metric']] <- 'mlogloss'
 
-# then we build the output layer
-ann$build_final_ensemble(size=5, final_params)$train_final(0.6)
+# then we build the output layer, trained on the predictions of the first layer
+anne$build_final_ensemble(size=5, final_params)$train_final(0.6)
 
-# NOW we'll read in the training data
+# NOW we'll read in the test data
 # https://www.kaggle.com/merishnasuwal/breast-cancer-prediction-dataset #
-ann$test_data_setup(
-  file_name='data/bcp_test_data.csv', 
-  label_name='Class', 
-  drop_list=c('Sample code number'))
+anne$test_data_setup(
+   file_name='data/bcp_test_data.csv', 
+   label_name='Class', 
+   sample_id='Sample code number'
+   # and make predictions on the test data
+)$predict(anne$test_data, 'median')
 
-ann$predict(ann$test_data, 'median')
+# finally we can print the top of the results table
+print(head(anne$results(include_label=TRUE)))
 
-
-metrics <- ann$final_classification_metrics()
-print(metrics)
+# and check out how we did.
+anne$final_classification_metrics() %>% print()
 
 
 

@@ -8,30 +8,6 @@ TODO
 
 * get ranked list of predictors across factors and final stages.
 
-## A simple xgb.train example:
-param <- list(max_depth = 2, eta = 1, verbose = 0, nthread = 2,
-objective = "binary:logistic", eval_metric = "auc")
-bst <- xgb.train(param, dtrain, nrounds = 2, watchlist)
-
-
-max_depth = self$max_depth, 
-eta = self$eta, 
-nrounds = self$nrounds,
-nthread = self$nthreads, 
-objective = self$objective, 
-eval_metric='logloss', #rmse',  # mlogloss
-early_stopping_rounds=2,
-verbose = 0
-
-max_depth = self$max_depth, 
-eta = self$eta, 
-nrounds = self$nrounds,
-nthread = self$nthreads, 
-objective = self$objective, 
-eval_metric='mlogloss',  # mlogloss rmse
-early_stopping_rounds=2,
-num_class=n_classes,
-verbose=0
 
 
 COMPLETE  
@@ -42,6 +18,8 @@ feb 25, 2022
 - adding params to simplify parameter list
 
 - more error catching functions
+
+- results table 
 
 
 jan 24, 2022

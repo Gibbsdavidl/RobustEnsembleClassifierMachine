@@ -24,7 +24,7 @@ params <- list(max_depth=6,
 # split the data, train and test
 anne$autopred(data_file='data/Breast Cancer Prediction.csv',
              label_name='Class',
-             drop_list = c('Sample code number'),
+             sample_id = 'Sample code number',
              data_split=0.60,
              data_mode=c('sigpairs', 'quartiles'), # c('original', 'ranks', 'pairs'), # 'sigpairs'
              signatures=sigs,
@@ -32,6 +32,9 @@ anne$autopred(data_file='data/Breast Cancer Prediction.csv',
              params=params,
              train_perc=0.5,
              combine_function='median')
+
+# print the test data results table
+print(head(anne$results(include_label = T)))
 
 # metrics on the test set predictions
 print(anne$final_classification_metrics())

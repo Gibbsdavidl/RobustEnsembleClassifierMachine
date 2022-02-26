@@ -32,6 +32,7 @@ Deng <- R6Class("Deng",
                     self$signatures <- signatures
                   },
                   
+                  
                   # data engineering
                   #' @description Data engineering, replaces the object's data.table.
                   data_eng = function(data=NULL) {
