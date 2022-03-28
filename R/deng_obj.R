@@ -51,13 +51,27 @@ Deng <- R6Class("Deng",
                       newdat <- cbind(newdat, data)
                     }
                     
+                    if ('binarize' %in% self$data_mode) {
+                      cols <- colnames(data)
+                      quartdat <- data[ , (cols) := lapply(.SD, "data_bin_2"), .SDcols = cols]
+                      colnames(quartdat) <- sapply(cols, function(a) paste0(a,'_quartile',collapse = ''))
+                      newdat <- cbind(newdat, quartdat)
+                    } 
+                    
+                    if ('tertiles' %in% self$data_mode) {
+                      cols <- colnames(data)
+                      quartdat <- data[ , (cols) := lapply(.SD, "data_bin_3"), .SDcols = cols]
+                      colnames(quartdat) <- sapply(cols, function(a) paste0(a,'_quartile',collapse = ''))
+                      newdat <- cbind(newdat, quartdat)
+                    } 
+                    
                     if ('quartiles' %in% self$data_mode) {
                       cols <- colnames(data)
                       quartdat <- data[ , (cols) := lapply(.SD, "data_bin_4"), .SDcols = cols]
                       colnames(quartdat) <- sapply(cols, function(a) paste0(a,'_quartile',collapse = ''))
                       newdat <- cbind(newdat, quartdat)
                     } 
-                    
+
                     if ('ranks' %in% self$data_mode) {
                       cols <- colnames(data)
                       rankdat <- data[ , (cols) := lapply(.SD, "rank", ties.method="min"), .SDcols = cols]
