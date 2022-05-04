@@ -524,7 +524,6 @@ Recm <- R6Class("Recm",
                     },
                     
                     
-                    
                     print_error = function(label, root, threshold) {
                       if (all(class(label) == 'numeric') == FALSE) {
                         label <- as.numeric(label)
@@ -629,22 +628,51 @@ Recm <- R6Class("Recm",
                     },
                     
                     
+                    importance = function() {
+                      # for each ensembl 
+                      resList <- list()
+                      for (i in 1:length(self$ensbl)) {
+                        impList <- list()
+                        ei <- self$ensbl[[i]]
+                        # for each booster in the ensemble member
+                        for (j in 1:ei$size) {
+                          impList <- rbind(impList, xgb.importance(model=ei$bstl[[j]]))
+                        }
+                        # then we have a set of tables, and they might or 
+                        # might not have the same feature names. Assume they
+                        # do not. Also don't have the same sizes.
+                        resList[[ei$name]] <- impList %>% 
+                          group_by(Feature) %>% 
+                          summarise(MedGain=median(Gain),
+                                    MedCover=median(Cover),
+                                    MedFreq=median(Frequency)) %>%
+                          arrange(desc(MedGain))
+                      }
+                      # now one item per ensemble
+                      return(resList)
+                    }, 
                     
-                    results = function(include_label=NULL) {
+                    
+                    results = function(include_label=FALSE) {
                       
                       # get the calls
                       mapped_calls <- self$ensbl[['final']]$pred_combined
+                      # map calls to the feature names
                       calls <- self$unmap_multiclass_labels(mapped_calls)
+                      # build a data frame with calls and sample ids
                       df <- data.frame(SampleIDs = self$test_sample_ids, BestCalls=calls)
-                      pred_sums <- apply(anne$pred_table, 1, sum)
-                      norm_pred_table <- t(sapply(1:nrow(anne$pred_table), function(i) anne$pred_table[i,] / pred_sums[i]))
+                      # 
+                      pred_sums <- apply(self$pred_table, 1, sum)
+                      norm_pred_table <- t(sapply(1:nrow(self$pred_table), function(i) self$pred_table[i,] / pred_sums[i]))
                       df <- cbind(df, norm_pred_table)
+                      
                       if (!is.null(self$test_label) && include_label == TRUE) {
                         df <- cbind(df, data.frame(Label=self$test_label))
                       }
                       
                       return(df)
                     },
+                    
                     
                     
                     autopred = function(data_file=NULL,

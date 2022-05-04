@@ -1,5 +1,5 @@
 
-# ensemble object
+# enbl ensemble object
 
 library(xgboost)
 
@@ -26,15 +26,15 @@ Ensbl <- R6Class("Ensbl",
                 public = list(
                   bstl = list(),   # booster list
                   name = NULL,     # name of this member
-                  obj_mode = NULL, 
+                  obj_mode = NULL, # either 'ensemble' or 'final'
                   size  = NULL,    # number of xgboost predictors
                   perc = NULL,     # percent of data to sample
                   data = NULL,     # the data to train from
                   label = NULL,    # the label vector 
                   params = NULL,   # parameters to train xgboost
-                  nrounds=NULL,
-                  nthreads=NULL,
-                  verbose=NULL,
+                  nrounds=NULL,    # number of rounds of training
+                  nthreads=NULL,   # number of threads to use
+                  verbose=NULL,    # verbose statements printed
                   preds = NULL,    # predictions made, as list
                   pred_table = NULL,  # table of predictions
                   pred_combined = NULL, # combined predictions

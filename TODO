@@ -1,17 +1,13 @@
 TODO
 
 * continue docs!!
-
-* function to wipe all the data out of the ensemble. keep only annotations.
   
-* plot ROCs for each factor
-
-* get ranked list of predictors across factors and final stages.
-
-
 
 COMPLETE  
 
+may 3, 2022
+- get ranked list of predictors across factors and final stages.
+- plot ROCs for each factor
 
 feb 25, 2022
 
@@ -41,3 +37,9 @@ jan 12, 2022
 
 -Bug in final embl between combined pred and label .
   
+  
+Thoughts:
+* function to wipe all the data out of the ensemble. keep only annotations.
+   ### not sure if this is possible, after clearing data from ensemble objects
+   ### the memory footprint does not change. also does not seem possible to 
+   ### remove data from xgboost objects.

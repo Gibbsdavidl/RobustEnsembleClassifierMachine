@@ -45,6 +45,21 @@ print("New Data")
 anne$final_classification_metrics() %>% print()
 
 # return the results
-print(head(anne$results()))
+res0 <- anne$results(include_label = TRUE)
+print(head(res0))
 
+# confusion matrix
+print(table(res0$BestCalls, res0$Label))
+
+# and get the importance of features in each ensemble member
+anne$importance()
+
+# plot the ROC curves for each class
+ensemble_rocs(anne)
+
+# From sim_data.R, where this test data were generated from:
+# Label 1 pairs are 2,7 and 1,9
+# Label 2 pairs are 3,6 and 4,5
+# Label 3 pairs are 11,12 and 8,10
+#These pairs should be recovered in the importance() table.
 

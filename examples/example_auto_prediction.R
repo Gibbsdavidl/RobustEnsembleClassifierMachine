@@ -26,7 +26,7 @@ anne$autopred(data_file='data/Breast Cancer Prediction.csv',
              label_name='Class',
              sample_id = 'Sample code number',
              data_split=0.60,
-             data_mode=c('sigpairs', 'quartiles'), # c('original', 'ranks', 'pairs'), # 'sigpairs'
+             data_mode=c('sigpairs', 'quartiles'), # 'quartiles', 'original', 'ranks', 'pairs', 'sigpairs'
              signatures=sigs,
              size=8,
              params=params,
@@ -38,3 +38,9 @@ print(head(anne$results(include_label = T)))
 
 # metrics on the test set predictions
 print(anne$final_classification_metrics())
+
+# and get the importance of features in each ensemble member
+anne$importance()
+
+# plot the ROC curves for each class
+ensemble_rocs(anne)

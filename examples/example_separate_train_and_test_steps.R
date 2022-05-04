@@ -23,7 +23,7 @@ anne <- Recm$new("Anne")
 # https://www.kaggle.com/merishnasuwal/breast-cancer-prediction-dataset #
 anne$train_data_setup(
   file_name = 'data/bcp_train_data.csv', 
-  data_mode='pairs',
+  data_mode=c('pairs'),  #'quartiles', 'original', 'ranks', 'pairs', 'sigpairs'
   label_name='Class',
   sample_id='Sample code number'
 )
@@ -60,11 +60,18 @@ anne$test_data_setup(
    # and make predictions on the test data
 )$predict(anne$test_data, 'median')
 
-# finally we can print the top of the results table
-print(head(anne$results(include_label=TRUE)))
+# return the results
+res0 <- anne$results(include_label = TRUE)
+print(head(res0))
+
+# confusion matrix
+print(table(res0$BestCalls, res0$Label))
 
 # and check out how we did.
 anne$final_classification_metrics() %>% print()
 
+# and get the importance of features in each ensemble member
+print(anne$importance())
 
-
+# plot the ROC curves for each class.
+ensemble_rocs(anne)
