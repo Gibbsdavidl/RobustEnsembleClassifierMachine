@@ -3,8 +3,8 @@
 
 test_that("object can read data", {
   anne <- Recm$new("Anne")
-  anne$read_data(file_name='../../data/bcp_train_data.csv', ',', header=T)
-  dat <- read.csv('../../data/bcp_train_data.csv')
+  anne$read_data(file_name='testdata/bcp_train_data.csv', ',', header=T)
+  dat <- read.csv('testdata/bcp_train_data.csv')
   # read.csv replaces spaces with dots
   colnames(dat) <- gsub("\\.", "_", colnames(dat))
   # 399  11
@@ -16,8 +16,8 @@ test_that("object can read data", {
 
 test_that("object can read data to training", {
   anne <- Recm$new("Anne")
-  anne$read_train_data(file_name='../../data/bcp_train_data.csv', ',', header=T)
-  dat <- read.csv('../../data/bcp_train_data.csv')
+  anne$read_train_data(file_name='testdata/bcp_train_data.csv', ',', header=T)
+  dat <- read.csv('testdata/bcp_train_data.csv')
   colnames(dat) <- gsub("\\.", "_", colnames(dat))
   # 399  11
   expect_equal(nrow(anne$train_data), nrow(dat))
@@ -28,8 +28,8 @@ test_that("object can read data to training", {
 
 test_that("object can read data to testing", {
   anne <- Recm$new("Anne")
-  anne$read_test_data(file_name='../../data/bcp_test_data.csv', ',', header=T)
-  dat <- read.csv('../../data/bcp_test_data.csv')
+  anne$read_test_data(file_name='testdata/bcp_test_data.csv', ',', header=T)
+  dat <- read.csv('testdata/bcp_test_data.csv')
   # read.csv replaces spaces with dots
   colnames(dat) <- gsub("\\.", "_", colnames(dat))
   # 399  11
@@ -43,7 +43,7 @@ test_that("data is split correctly", {
   
   anne <- Recm$new("Anne")
 
-  anne$data_setup(file_name='../../data/bcp_train_data.csv', 
+  anne$data_setup(file_name='testdata/bcp_train_data.csv', 
     sep=',', 
     data_mode='original', 
     signatures=NULL, 
@@ -52,7 +52,7 @@ test_that("data is split correctly", {
     data_split=0.6)
   
   # reading in the train data
-  dat <- read.csv('../../data/bcp_train_data.csv')
+  dat <- read.csv('testdata/bcp_train_data.csv')
   # read.csv replaces spaces with dots
   colnames(dat) <- gsub("\\.", "_", colnames(dat))
   dat <- dat[, 2:10]
@@ -83,7 +83,7 @@ test_that("data_mode, label_name, and drop_list errors are caught", {
                  verbose=0)
   
   expect_error(
-    anne$autopred(data_file='../../data/bcp_train_data.csv',
+    anne$autopred(data_file='testdata/bcp_train_data.csv',
                  label_name='Class',
                  drop_list = c('Sample code number'),
                  data_split=0.60,
@@ -98,7 +98,7 @@ test_that("data_mode, label_name, and drop_list errors are caught", {
   
   
   expect_error(
-    anne$data_setup(file_name='../../data/bcp_train_data.csv', 
+    anne$data_setup(file_name='testdata/bcp_train_data.csv', 
                     sep=',', 
                     data_mode='__original__',  ### incorrect mode
                     signatures=NULL, 
@@ -109,7 +109,7 @@ test_that("data_mode, label_name, and drop_list errors are caught", {
   )  
 
     expect_error(
-    anne$data_setup(file_name='../../data/bcp_train_data.csv', 
+    anne$data_setup(file_name='testdata/bcp_train_data.csv', 
                     sep=',', 
                     data_mode='original', 
                     signatures=NULL, 
@@ -121,7 +121,7 @@ test_that("data_mode, label_name, and drop_list errors are caught", {
   
   anne <- Recm$new("Anne")
   expect_error(
-    anne$data_setup(file_name='../../data/bcp_train_data.csv', 
+    anne$data_setup(file_name='testdata/bcp_train_data.csv', 
                     sep=',', 
                     data_mode='original', 
                     signatures=NULL, 
@@ -137,7 +137,7 @@ test_that("data_mode, label_name, and drop_list errors are caught", {
 test_that("Label NULL values are caught", {
   anne <- Recm$new("Anne")
   expect_error(
-    anne$data_setup(file_name='../../data/bcp_train_data.csv', 
+    anne$data_setup(file_name='testdata/bcp_train_data.csv', 
                     sep=',', 
                     data_mode='original', 
                     signatures=NULL, 

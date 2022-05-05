@@ -12,12 +12,15 @@ License: Apache-2.0
 Encoding: UTF-8
 LazyData: true
 Depends:
+  R6,
+  data.table,
+  dplyr,
   xgboost,
   plotROC,
   stringr,
   parallel,
   ROCit
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.2
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

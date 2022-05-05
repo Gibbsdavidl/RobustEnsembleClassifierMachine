@@ -1,2 +1,4 @@
 export(Ensbl)
 export(Recm)
+export(ensemble_rocs)
+export(plot_roc)

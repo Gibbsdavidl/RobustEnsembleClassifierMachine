@@ -1,7 +1,7 @@
 
 # enbl ensemble object
 
-library(xgboost)
+# library(xgboost)
 
 
 #' @name Ensbl
@@ -11,16 +11,6 @@ library(xgboost)
 #' @details
 #' The ensbl object contains a list of xgboost objects
 #'
-#' @examples
-#' # Set of integers
-#' 
-#' ann$build_label_ensemble(c('pairs'), size=5,
-#'   max_depth = 7, eta = 0.3, nrounds = 5,
-#'   nthreads = 4, objective = "binary:logistic")
-#' 
-#' ann$train_models(0.6)
-#' 
-#' ann$ensemble_predict(ann$train_data, 'median')
 #'
 Ensbl <- R6Class("Ensbl",
                 public = list(

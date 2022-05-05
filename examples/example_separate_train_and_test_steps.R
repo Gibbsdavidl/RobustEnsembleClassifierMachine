@@ -68,7 +68,7 @@ print(head(res0))
 print(table(res0$BestCalls, res0$Label))
 
 # and check out how we did.
-anne$final_classification_metrics() %>% print()
+anne$classification_metrics() %>% print()
 
 # and get the importance of features in each ensemble member
 print(anne$importance())

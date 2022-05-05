@@ -1,9 +1,9 @@
 
 # R6 object
 
-library(R6)
-library(data.table)
-library(dplyr)
+# library(R6)
+# library(data.table)
+# library(dplyr)
 
 #source('R/enbl_obj.R')
 #source('R/deng_obj.R')
@@ -14,9 +14,6 @@ library(dplyr)
 #' An object that holds data and an ensemble of classifiers
 #' The ensemble is composed of XGBoost classifiers trained on binarized labels.
 #'
-#' @examples
-#' # New object
-#' ann <- Recm$new("Ann")
 #' 
 #' @export
 Recm <- R6Class("Recm",
@@ -396,10 +393,6 @@ Recm <- R6Class("Recm",
                     #'
                     #' @return A ensemble object is added to the list of objects in recm$enbl.
                     #'
-                    #' @examples
-                    #' ann$build_ensemble('e1', c('pairs'), 21, data = ann$train_data, label = 4,
-                    #' max_depth = 7, eta = 0.3, nrounds = 5,
-                    #' nthreads = 4, objective = "binary:logistic")
                     #'
                     build_label_ensemble = function(size,
                                                     params) {
@@ -565,7 +558,7 @@ Recm <- R6Class("Recm",
                     },
                     
                     
-                    final_classification_metrics = function() {
+                    classification_metrics = function() {
                       
                       if (is.null(self$test_label)) {
                         return("No test labels.")
@@ -668,6 +661,7 @@ Recm <- R6Class("Recm",
                       
                       if (!is.null(self$test_label) && include_label == TRUE) {
                         df <- cbind(df, data.frame(Label=self$test_label))
+                        
                       }
                       
                       return(df)

@@ -42,7 +42,7 @@ anne$predict(anne$test_data, 'median')
 
 # metrics on the test set.
 print("New Data")
-anne$final_classification_metrics() %>% print()
+anne$classification_metrics() %>% print()
 
 # return the results
 res0 <- anne$results(include_label = TRUE)

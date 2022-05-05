@@ -16,8 +16,8 @@ sigs = list(Sig1=c('Uniformity of Cell Shape','Uniformity of Cell Size', 'Margin
 
 # xgboost parameters
 params <- list(max_depth=6,
-               eta=0.1,
-               nrounds=5,
+               eta=0.2,
+               nrounds=12,
                nthreads=4,
                verbose=0)
 
@@ -26,21 +26,30 @@ anne$autopred(data_file='data/Breast Cancer Prediction.csv',
              label_name='Class',
              sample_id = 'Sample code number',
              data_split=0.60,
-             data_mode=c('sigpairs', 'quartiles'), # 'quartiles', 'original', 'ranks', 'pairs', 'sigpairs'
+             data_mode=c('pairs'), # 'quartiles', 'original', 'ranks', 'pairs', 'sigpairs'
              signatures=sigs,
-             size=8,
+             size=11,
              params=params,
-             train_perc=0.5,
+             train_perc=0.3,
              combine_function='median')
 
 # print the test data results table
-print(head(anne$results(include_label = T)))
+print(
+  head(
+    anne$results(include_label = T)
+    )
+  )
 
 # metrics on the test set predictions
-print(anne$final_classification_metrics())
+print(
+  anne$classification_metrics()
+  )
 
 # and get the importance of features in each ensemble member
-anne$importance()
+print(
+  anne$importance()
+)
 
 # plot the ROC curves for each class
 ensemble_rocs(anne)
+
