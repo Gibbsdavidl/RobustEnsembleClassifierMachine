@@ -1,7 +1,7 @@
 # RobustEnsembleClassifierMachine
 #Transforms data into robust forms and trains an ensemble of XGboost classifiers.
 
-'''
+```
 devtools::install_github("gibbsdavidl/RobustEnsembleClassifierMachine")
 
 library(RobustEnsembleClassifierMachine)
@@ -54,7 +54,7 @@ print(
 # plot the ROC curves for each class
 ensemble_rocs(anne)
 
-'''
+```
 
 Let me know if something's not working!
   david.gibbs@systemsbiology.org
