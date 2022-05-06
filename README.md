@@ -1,3 +1,7 @@
+
+
+# Soon to change names to:  robencla the rob(ust) en(semble) cla(ssifier)
+
 # RobustEnsembleClassifierMachine
 #Transforms data into robust forms and trains an ensemble of XGboost classifiers.
 
