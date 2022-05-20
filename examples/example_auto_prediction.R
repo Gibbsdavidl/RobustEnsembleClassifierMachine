@@ -2,10 +2,12 @@
 
 # Example using the autopred (auto-prediction) function.
 
-source('R/recm_obj.R')
-source('R/util_fun.R')
-source('R/deng_obj.R')
-source('R/enbl_obj.R')
+#source('R/recm_obj.R')
+#source('R/util_fun.R')
+#source('R/deng_obj.R')
+#source('R/enbl_obj.R')
+
+library(RobustEnsembleClassifierMachine)
 
 anne <- Recm$new("Anne")
 
@@ -25,8 +27,9 @@ params <- list(max_depth=6,
 anne$autopred(data_file='data/Breast Cancer Prediction.csv',
              label_name='Class',
              sample_id = 'Sample code number',
+             cv_rounds=3,
              data_split=0.60,
-             data_mode=c('pairs'), # 'quartiles', 'original', 'ranks', 'pairs', 'sigpairs'
+             data_mode=c('sigpairs'), # 'quartiles', 'original', 'ranks', 'pairs', 'sigpairs'
              signatures=sigs,
              size=11,
              params=params,
@@ -36,20 +39,22 @@ anne$autopred(data_file='data/Breast Cancer Prediction.csv',
 # print the test data results table
 print(
   head(
-    anne$results(include_label = T)
+    anne$cv_results
     )
   )
 
 # metrics on the test set predictions
 print(
-  anne$classification_metrics()
+  anne$classification_metrics() # uses CV results
   )
 
 # and get the importance of features in each ensemble member
 print(
-  anne$importance()
+  anne$importance() # uses the last fold trained.
 )
 
 # plot the ROC curves for each class
-ensemble_rocs(anne)
+ensemble_rocs(anne) # uses the last fold trained.
+
+print(dim(anne$cv_results))
 

@@ -49,6 +49,9 @@ Recm <- R6Class("Recm",
                     #' @test_sample_ids the sample IDs used in test data
                     test_sample_ids = NULL,
                     
+                    #' @field cv_rounds the number of cross-validation rounds, values greater than 1 overrides data_split.
+                    cv_rounds=1,
+                    
                     #' @field data_split numeric value indicating percent data to make into training data
                     data_split = NULL,
                     
@@ -78,6 +81,12 @@ Recm <- R6Class("Recm",
                     
                     #' @field the table of predictions, collecting from the ensbl list of predictors
                     pred_table = NULL,
+                    
+                    #' @field cv_results the table of results over all samples.
+                    cv_results = NULL,
+                    
+                    #' @field cv_importance the list of importance from each fold.
+                    cv_importance = NULL,
                     
                     #' @description Create a new `Recm` object.
                     #' @param name The object is named.
@@ -153,6 +162,51 @@ Recm <- R6Class("Recm",
                       }
                     },
                     
+                    
+                    #' @description Splits the data into training and test data.
+                    #' @param label_name string, the column name indicating the target label
+                    #' @param drop_list a vector of strings indicating what columns to drop
+                    #' @param data_split numeric value, the percent of data to use in training 
+                    data_split_fun = function(data_split, cv_rounds, i) {
+                      
+                      if (cv_rounds == 1) {
+                        # to split the data into training and test components
+                        n <- nrow(self$data)
+                        idx <- sample.int(n = n, size=data_split*n)
+                        jdx <- setdiff( (1:n), idx)
+                        # then create the data sets
+                        self$train_data <- self$data[idx,]
+                        self$train_label <- self$label[idx]
+                        self$train_sample_ids <- self$sample_ids[idx]
+                        # 
+                        self$test_data <- self$data[jdx,]
+                        self$test_label <- self$label[jdx]
+                        self$test_sample_ids <- self$sample_ids[jdx]
+                        # and record the unique categories in labels 
+                        self$unique_labels <- unique(self$train_label)
+                        
+                        # or ELSE we're doing cross-validation
+                      } else {
+                        #Create 10 equally size folds
+                        folds <- cut(seq(1,nrow(self$data)),breaks=cv_rounds,labels=FALSE)
+                        
+                        #Segement your data by fold using the which() function 
+                        testIndexes <- which(folds==i,arr.ind=TRUE)
+                        self$train_data <- self$data[-testIndexes, ]
+                        self$train_label <- self$label[-testIndexes]
+                        self$train_sample_ids <- self$sample_ids[-testIndexes]
+                        
+                        self$test_data  <- self$data[testIndexes, ]
+                        self$test_label <- self$label[testIndexes]
+                        self$test_sample_ids <- self$sample_ids[testIndexes]
+                        
+                        self$unique_labels <- unique(self$train_label)
+                      
+                      }
+                      
+                      return()
+                    },
+                    
 
                     #' @description Does some setup processing on the data file, drop columns, split data into train and test, and identify the label column.
                     #' @param file_name string, the name of the file
@@ -183,7 +237,8 @@ Recm <- R6Class("Recm",
                         stop('Please specify the sep parameter... or use a .csv or .tsv file.')
                       }
                       
-                      self$data <- data.table::fread(file=file_name, sep=sep, header=T)
+                      thisdata <- data.table::fread(file=file_name, sep=sep, header=T)
+                      self$data <- thisdata[sample(nrow(thisdata)),]
                       self$data_colnames <- colnames(self$data)
                       colnames(self$data) <- gsub(" ", "_", colnames(self$data))
                       
@@ -220,19 +275,6 @@ Recm <- R6Class("Recm",
                       
                       # DATA ENGINEERING
                       self$data_eng('data')
-                      # to split the data into training and test components
-                      n <- nrow(self$data)
-                      idx <- sample.int(n = n, size=data_split*n)
-                      jdx <- setdiff( (1:n), idx)
-                      # then create the data sets
-                      self$train_data <- self$data[idx,]
-                      self$train_label <- self$label[idx]
-                      self$train_sample_ids <- self$sample_ids[idx]
-                      self$test_data <- self$data[jdx,]
-                      self$test_label <- self$label[jdx]
-                      self$test_sample_ids <- self$sample_ids[jdx]
-                      # and record the unique categories in labels 
-                      self$unique_labels <- unique(self$train_label)
                       
                       return(invisible(self))
                     },
@@ -558,17 +600,24 @@ Recm <- R6Class("Recm",
                     },
                     
                     
-                    classification_metrics = function() {
+                    classification_metrics = function(use_cv_results=TRUE) {
                       
-                      if (is.null(self$test_label)) {
-                        return("No test labels.")
-                      } else {
-                        # first make sure our labels are mapped to integers correctly
-                        labels <- self$test_label
+                      if (use_cv_results) {
+                        calls <- self$cv_results$BestCalls
+                        labels <- self$cv_results$Label
                         
-                        # get the calls
-                        mapped_calls <- self$ensbl[['final']]$pred_combined
-                        calls <- self$unmap_multiclass_labels(mapped_calls)
+                      } else {
+                        if (is.null(self$test_label)) {
+                          return("No test labels.")
+                        } else {
+                          # first make sure our labels are mapped to integers correctly
+                          labels <- self$test_label
+                          
+                          # get the calls
+                          mapped_calls <- self$ensbl[['final']]$pred_combined
+                          calls <- self$unmap_multiclass_labels(mapped_calls)
+                          
+                      }
                         
                         # then build the multi-class confusion matrix
                         confusion_matrix <- table( labels, calls )
@@ -663,17 +712,17 @@ Recm <- R6Class("Recm",
                         df <- cbind(df, data.frame(Label=self$test_label))
                         
                       }
-                      
                       return(df)
                     },
                     
                     
-                    
+                    # Run CV or specify a split
                     autopred = function(data_file=NULL,
                                         sep=NULL,
                                         label_name=NULL,
                                         sample_id=NULL,
                                         drop_list=NULL,
+                                        cv_rounds=1,
                                         data_split=NULL,
                                         data_mode=NULL,
                                         signatures=NULL,
@@ -683,7 +732,13 @@ Recm <- R6Class("Recm",
                                         combine_function=NULL
                                       ) {
                       
-
+                      params[['objective']] <- "binary:logistic"
+                      params[['eval_metric']] <-'logloss'
+                      final_params <- params
+                      final_params[['objective']] <- 'multi:softmax'
+                      final_params[['eval_metric']] <- 'mlogloss'
+                      
+                      
                       # perform the data set up
                       self$data_setup(file_name=data_file,
                                      sep=sep,
@@ -691,40 +746,50 @@ Recm <- R6Class("Recm",
                                      signatures=signatures,
                                      label_name=label_name, 
                                      sample_id=sample_id,
-                                     drop_list=drop_list, 
-                                     data_split=data_split)
+                                     drop_list=drop_list)
                       
-                      params[['objective']] <- "binary:logistic"
-                      params[['eval_metric']] <-'logloss'
                       
-                      # build the initial set of predictors
-                      self$build_label_ensemble(size=size, 
-                                                params=params)
-                      
-                      # and train them using a random selection of data
-                      self$train_models(train_perc)
-                      
-                      # then make a prediction on the training data
-                      self$ensemble_predict(self$train_data, 
-                                            combine_function = combine_function)
-                      
-                      final_params <- params
-                      final_params[['objective']] <- 'multi:softmax'
-                      final_params[['eval_metric']] <- 'mlogloss'
-                      
-                      # build the output predictor
-                      self$build_final_ensemble(size=size, 
-                                                final_params)
-
-                      # and use the earlier training predictions to train the output                      
-                      self$train_final(train_perc)
-                      
-                      # and finally, make a prediction on some training data.
-                      self$predict(self$test_data, combine_function)
-
-                    }
+                      for (cvi in 1:cv_rounds){
+                        
+                        print(paste0("*** Training-Testing Round ", cvi, " ***"))
+                        
+                        # SPLIT DATA round 1
+                        self$data_split_fun(data_split, cv_rounds, cvi)
+                        
+                        # build the initial set of predictors
+                        self$build_label_ensemble(size=size, 
+                                                  params=params)
+                        
+                        # and train them using a random selection of data
+                        self$train_models(train_perc)
+                        
+                        # then make a prediction on the training data
+                        self$ensemble_predict(self$train_data, 
+                                              combine_function = combine_function)
+                        
+                        # build the output predictor
+                        self$build_final_ensemble(size=size, 
+                                                  final_params)
+                        
+                        # and use the earlier training predictions to train the output                      
+                        self$train_final(train_perc)
+                        
+                        # and finally, make a prediction on some training data.
+                        self$predict(self$test_data, combine_function)
+                        
+                        # capture the feature importance from each fold
+                        self$cv_importance[[cvi]] <- self$importance()
+                        
+                        # append the final results 
+                        if (cvi > 1) {
+                          self$cv_results = rbind(self$cv_results, self$results(include_label = T))
+                        } else {
+                          self$cv_results = self$results(include_label = T)
+                        }
+                        
+                      } # done with CV
                     
-                    
+                    }# end autopred
                   ) # end public
       )
 
