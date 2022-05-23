@@ -1,13 +1,6 @@
 
 # R6 object
 
-# library(R6)
-# library(data.table)
-# library(dplyr)
-
-#source('R/enbl_obj.R')
-#source('R/deng_obj.R')
-
 
 #' Recm  Robust ensemble classifier machine (Recm)
 #' 
@@ -143,11 +136,6 @@ Recm <- R6Class("Recm",
                     #' @description Data engineering, replaces the object's data.table.
                     data_eng = function(data_source=NULL) {
                       
-                      if (!all(self$data_mode %in% c('original','quartiles','pairs','ranks','sigpairs'))) {
-                        print("ERROR:  please choose a valid collection of data modes: ")
-                        print('original  quartiles  pairs  ranks  sigpairs')
-                        stop('data_mode, wrong value')
-                      }
                       # create a new data engineering object
                       this_deng <- Deng$new(self$data_mode, self$signatures)
                                           
@@ -616,7 +604,7 @@ Recm <- R6Class("Recm",
                           # get the calls
                           mapped_calls <- self$ensbl[['final']]$pred_combined
                           calls <- self$unmap_multiclass_labels(mapped_calls)
-                          
+                        }
                       }
                         
                         # then build the multi-class confusion matrix
@@ -663,9 +651,6 @@ Recm <- R6Class("Recm",
                         metrics <- rbind(metrics, avg_row)
                         
                         return(metrics)
-                        
-                        
-                      }
                       
                     },
                     

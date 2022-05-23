@@ -51,8 +51,8 @@ ensemble_rocs <- function(recm_obj){
   
   par(mfcol=c(N,1))
   
-  for (j in 1:length(recm_obj$unique_labels)){
-      plot_roc(recm_obj, j)
+  for (i in 1:length(recm_obj$unique_labels)){
+      plot_roc(recm_obj, i)
   }
   
 }

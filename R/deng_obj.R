@@ -1,9 +1,4 @@
 
-# library(R6)
-# library(data.table)
-
-
-
 # can be quickly applied to data.table
 
 # bin data vectors into 4 levels
@@ -66,6 +61,13 @@ Deng <- R6Class("Deng",
                                         signatures = NULL) {
                     self$data_mode <- data_mode
                     self$signatures <- signatures
+                    
+                    if (!all(data_mode %in% c('pairs','sigpairs','quartiles','tertiles','binary','ranks','original'))) {
+                      print("ERROR:  please choose a valid collection of data modes: ")
+                      print('pairs,sigpairs,quartiles,tertiles,binary,ranks,original')
+                      stop(paste0('data_mode, ', self$data_mode  ,' wrong value'))
+                    }
+                    
                   },
                   
                   
@@ -73,10 +75,10 @@ Deng <- R6Class("Deng",
                   #' @description Data engineering, replaces the object's data.table.
                   data_eng = function(data=NULL) {
                     
-                    if (!all(self$data_mode %in% c('original','quartiles','pairs','ranks','sigpairs'))) {
+                    if (!all(self$data_mode %in% c('pairs','sigpairs','quartiles','tertiles','binary','ranks','original'))) {
                       print("ERROR:  please choose a valid collection of data modes: ")
-                      print('original  quartiles  pairs  ranks  sigpairs')
-                      stop('data_mode, wrong value')
+                      print('pairs,sigpairs,quartiles,tertiles,binary,ranks,original')
+                      stop(paste0('data_mode, ', self$data_mode  ,' wrong value'))
                     }
                     
                     rankdat <- NULL
@@ -87,17 +89,17 @@ Deng <- R6Class("Deng",
                       newdat <- cbind(newdat, data)
                     }
                     
-                    if ('binarize' %in% self$data_mode) {
+                    if ('binary' %in% self$data_mode) {
                       cols <- colnames(data)
                       quartdat <- data[ , (cols) := lapply(.SD, "data_bin_2"), .SDcols = cols]
-                      colnames(quartdat) <- sapply(cols, function(a) paste0(a,'_quartile',collapse = ''))
+                      colnames(quartdat) <- sapply(cols, function(a) paste0(a,'_binary',collapse = ''))
                       newdat <- cbind(newdat, quartdat)
                     } 
                     
                     if ('tertiles' %in% self$data_mode) {
                       cols <- colnames(data)
                       quartdat <- data[ , (cols) := lapply(.SD, "data_bin_3"), .SDcols = cols]
-                      colnames(quartdat) <- sapply(cols, function(a) paste0(a,'_quartile',collapse = ''))
+                      colnames(quartdat) <- sapply(cols, function(a) paste0(a,'_tertiles',collapse = ''))
                       newdat <- cbind(newdat, quartdat)
                     } 
                     

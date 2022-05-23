@@ -2,12 +2,7 @@
 
 # Example using the autopred (auto-prediction) function.
 
-#source('R/recm_obj.R')
-#source('R/util_fun.R')
-#source('R/deng_obj.R')
-#source('R/enbl_obj.R')
-
-library(RobustEnsembleClassifierMachine)
+library(robencla)
 
 anne <- Recm$new("Anne")
 
@@ -29,7 +24,7 @@ anne$autopred(data_file='data/Breast Cancer Prediction.csv',
              sample_id = 'Sample code number',
              cv_rounds=3,
              data_split=0.60,
-             data_mode=c('sigpairs'), # 'quartiles', 'original', 'ranks', 'pairs', 'sigpairs'
+             data_mode=c('binary'), # pairs,sigpairs,quartiles,tertiles,binary,ranks,original
              signatures=sigs,
              size=11,
              params=params,
