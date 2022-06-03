@@ -16,6 +16,9 @@ anne <- Recm$new("Anne")
 sigs = list(Sig1=c('Uniformity of Cell Shape','Uniformity of Cell Size', 'Marginal Adhesion'), 
             Sig2=c('Bare Nuclei', 'Normal Nucleoli', 'Single Epithelial Cell Size'),
             Sig3=c('Bland Chromatin', 'Mitoses'))
+            
+# Now, create a list of features, and pairs will only be created from that list.
+pair_list <- c('Uniformity of Cell Shape','Uniformity of Cell Size', 'Marginal Adhesion')
 
 # XGBoost parameters to pass to each sub-classifier in the ensembles
 params <- list(max_depth=6,
@@ -46,6 +49,9 @@ anne$autopred(
   
   # If using signature pairs, then the list defining the signatures, must be composed of column names
   signatures=sigs,
+  
+  # Use only these features for the pairs
+  pair_list=pairlist,
   
   # Size of the ensemble, per binary prediction 
   size=11,
