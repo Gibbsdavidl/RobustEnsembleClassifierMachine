@@ -9,15 +9,10 @@
 ### will be bundled into a single call and demonstrated 
 ### in test2.R
 
-# library(RobustEnsembleClassifierMachine)
-
-source('R/recm_obj.R')
-source('R/util_fun.R')
-source('R/deng_obj.R')
-source('R/enbl_obj.R')
+library(robencla)
 
 # The object's name is Ann, OK?
-anne <- Recm$new("Anne")
+anne <- Robencla$new("Anne")
 
 # first we read in some data, which is processed into robust features
 # https://www.kaggle.com/merishnasuwal/breast-cancer-prediction-dataset #
@@ -38,9 +33,8 @@ params <- list(max_depth=6,
 # building the first layer of predictors, each a binary prediction
 # on one factor in the target labels.
 # training and making predictions on the training data
-anne$build_label_ensemble(size=5, 
-                          params=params)$
-    train_models(0.6)$
+anne$build_label_ensemble(size=5, params=params)$
+    train_models(0.8)$
     ensemble_predict(anne$train_data, 'median')
 
 # setting some final layer xgboost params
@@ -49,7 +43,7 @@ final_params[['objective']] <- 'multi:softmax'
 final_params[['eval_metric']] <- 'mlogloss'
 
 # then we build the output layer, trained on the predictions of the first layer
-anne$build_final_ensemble(size=5, final_params)$train_final(0.6)
+anne$build_final_ensemble(size=5, final_params)$train_final(0.8)
 
 # NOW we'll read in the test data
 # https://www.kaggle.com/merishnasuwal/breast-cancer-prediction-dataset #
@@ -68,10 +62,13 @@ print(head(res0))
 print(table(res0$BestCalls, res0$Label))
 
 # and check out how we did.
-anne$classification_metrics() %>% print()
-
+# metrics on the test set predictions
+print(
+  anne$classification_metrics(use_cv_results=FALSE) # No CV results
+)
 # and get the importance of features in each ensemble member
 print(anne$importance())
 
-# plot the ROC curves for each class.
-ensemble_rocs(anne)
+# plot the ROC curves for each class
+## IF THE ROC IS UPSIDE DOWN, SET FLIP=T
+ensemble_rocs(anne, flip=F) # uses the last fold trained.

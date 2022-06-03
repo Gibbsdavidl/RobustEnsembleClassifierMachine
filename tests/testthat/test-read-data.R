@@ -2,7 +2,7 @@
 # test that the object can read data
 
 test_that("object can read data", {
-  anne <- Recm$new("Anne")
+  anne <- Robencla$new("Anne")
   anne$read_data(file_name='testdata/bcp_train_data.csv', ',', header=T)
   dat <- read.csv('testdata/bcp_train_data.csv')
   # read.csv replaces spaces with dots
@@ -15,7 +15,7 @@ test_that("object can read data", {
 
 
 test_that("object can read data to training", {
-  anne <- Recm$new("Anne")
+  anne <- Robencla$new("Anne")
   anne$read_train_data(file_name='testdata/bcp_train_data.csv', ',', header=T)
   dat <- read.csv('testdata/bcp_train_data.csv')
   colnames(dat) <- gsub("\\.", "_", colnames(dat))
@@ -27,7 +27,7 @@ test_that("object can read data to training", {
 
 
 test_that("object can read data to testing", {
-  anne <- Recm$new("Anne")
+  anne <- Robencla$new("Anne")
   anne$read_test_data(file_name='testdata/bcp_test_data.csv', ',', header=T)
   dat <- read.csv('testdata/bcp_test_data.csv')
   # read.csv replaces spaces with dots
@@ -41,15 +41,16 @@ test_that("object can read data to testing", {
 
 test_that("data is split correctly", {
   
-  anne <- Recm$new("Anne")
+  anne <- Robencla$new("Anne")
 
   anne$data_setup(file_name='testdata/bcp_train_data.csv', 
     sep=',', 
-    data_mode='original', 
-    signatures=NULL, 
-    label_name='Class', 
-    drop_list='Sample code number', 
+    data_mode='original',
+    label_name='Class',
+    drop_list='Sample code number',
     data_split=0.6)
+  
+  anne$data_split_fun(data_split = 0.6, cv_rounds = 1)
   
   # reading in the train data
   dat <- read.csv('testdata/bcp_train_data.csv')
@@ -75,7 +76,7 @@ test_that("data is split correctly", {
 
 test_that("data_mode, label_name, and drop_list errors are caught", {
 
-  anne <- Recm$new("Anne")
+  anne <- Robencla$new("Anne")
   params <- list(max_depth=6,
                  eta=0.1,
                  nrounds=5,
@@ -93,7 +94,7 @@ test_that("data_mode, label_name, and drop_list errors are caught", {
                  params=params,
                  train_perc=0.5,
                  combine_function='median'),
-    'data_mode, wrong value'
+    paste0('data_mode, ', '___sigpairs___' ,' wrong value')
   )  
   
   
@@ -105,7 +106,7 @@ test_that("data_mode, label_name, and drop_list errors are caught", {
                     label_name='Class', 
                     drop_list='Sample code number', 
                     data_split=0.6),
-    'data_mode, wrong value'
+    paste0('data_mode, ', '__original__' ,' wrong value')
   )  
 
     expect_error(
@@ -119,7 +120,7 @@ test_that("data_mode, label_name, and drop_list errors are caught", {
     'Make sure the label name matches one of the columns!'
     )  
   
-  anne <- Recm$new("Anne")
+  anne <- Robencla$new("Anne")
   expect_error(
     anne$data_setup(file_name='testdata/bcp_train_data.csv', 
                     sep=',', 
@@ -135,7 +136,7 @@ test_that("data_mode, label_name, and drop_list errors are caught", {
 
 
 test_that("Label NULL values are caught", {
-  anne <- Recm$new("Anne")
+  anne <- Robencla$new("Anne")
   expect_error(
     anne$data_setup(file_name='testdata/bcp_train_data.csv', 
                     sep=',', 

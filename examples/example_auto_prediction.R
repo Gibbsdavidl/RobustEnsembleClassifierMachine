@@ -4,12 +4,15 @@
 
 library(robencla)
 
-anne <- Recm$new("Anne")
+anne <- Robencla$new("Anne")
 
 # list of signatures to compare
 sigs = list(Sig1=c('Uniformity of Cell Shape','Uniformity of Cell Size', 'Marginal Adhesion'), 
             Sig2=c('Bare Nuclei', 'Normal Nucleoli', 'Single Epithelial Cell Size'),
             Sig3=c('Bland Chromatin', 'Mitoses'))
+
+# only pair these features
+my_pairs <- c('Clump Thickness','Uniformity of Cell Size','Uniformity of Cell Shape','Marginal Adhesion')
 
 # xgboost parameters
 params <- list(max_depth=6,
@@ -24,7 +27,8 @@ anne$autopred(data_file='data/Breast Cancer Prediction.csv',
              sample_id = 'Sample code number',
              cv_rounds=3,
              data_split=0.60,
-             data_mode=c('binary'), # pairs,sigpairs,quartiles,tertiles,binary,ranks,original
+             data_mode=c('pairs', 'sigpairs'), # pairs,sigpairs,quartiles,tertiles,binary,ranks,original
+             pair_list=my_pairs,
              signatures=sigs,
              size=11,
              params=params,
@@ -49,7 +53,11 @@ print(
 )
 
 # plot the ROC curves for each class
-ensemble_rocs(anne) # uses the last fold trained.
+## IF THE ROC IS UPSIDE DOWN, SET FLIP=T
+ensemble_rocs(anne, flip=F) # uses the last fold trained.
 
 print(dim(anne$cv_results))
+
+# plot the ROC curves for each class
+#ensemble_rocs(anne, flip=T) # uses the last fold trained.
 

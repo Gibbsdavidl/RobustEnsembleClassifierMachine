@@ -9,7 +9,7 @@
 #'
 #' 
 #' @export
-Recm <- R6Class("Recm",
+Robencla <- R6Class("Robencla",
                   public = list(
                     
                     #' @field name the object's name
@@ -20,6 +20,9 @@ Recm <- R6Class("Recm",
                     
                     #' @field signatures lists of variables, must be in data, that will be used together, and compared to other signatures
                     signatures = NULL,
+                    
+                    #' @field pair_list a list of column names in the data, that will become paired data
+                    pair_list = NULL,
                     
                     #' @field file_name the data file
                     file_name = NULL,
@@ -137,7 +140,7 @@ Recm <- R6Class("Recm",
                     data_eng = function(data_source=NULL) {
                       
                       # create a new data engineering object
-                      this_deng <- Deng$new(self$data_mode, self$signatures)
+                      this_deng <- Data_eng$new(self$data_mode, self$signatures, self$pair_list)
                                           
                       if (data_source == 'train') {
                         self$train_data <- this_deng$data_eng(self$train_data)
@@ -155,7 +158,7 @@ Recm <- R6Class("Recm",
                     #' @param label_name string, the column name indicating the target label
                     #' @param drop_list a vector of strings indicating what columns to drop
                     #' @param data_split numeric value, the percent of data to use in training 
-                    data_split_fun = function(data_split, cv_rounds, i) {
+                    data_split_fun = function(data_split, cv_rounds=1, i=1) {
                       
                       if (cv_rounds == 1) {
                         # to split the data into training and test components
@@ -207,6 +210,7 @@ Recm <- R6Class("Recm",
                                           sep=NULL, 
                                           data_mode=NULL, 
                                           signatures=NULL, 
+                                          pair_list=NULL,
                                           label_name=NULL, 
                                           sample_id=NULL,
                                           drop_list=NULL, 
@@ -215,16 +219,18 @@ Recm <- R6Class("Recm",
                       self$file_name <- file_name
                       self$data_mode <- data_mode
                       self$signatures <- signatures
+                      self$pair_list <- pair_list
+                      self$data_split <- data_split
                       
                       if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
                         sep = ','
-                      }
-                      else if (is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
+                      } else if (is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
                         sep = '\t'
                       } else if (is.null(sep)) {
                         stop('Please specify the sep parameter... or use a .csv or .tsv file.')
                       }
                       
+                      # read in the data
                       thisdata <- data.table::fread(file=file_name, sep=sep, header=T)
                       self$data <- thisdata[sample(nrow(thisdata)),]
                       self$data_colnames <- colnames(self$data)
@@ -275,6 +281,7 @@ Recm <- R6Class("Recm",
                                                 sep=NULL, 
                                                 data_mode=NULL, 
                                                 signatures=NULL, 
+                                                pair_list=NULL,
                                                 label_name=NULL, 
                                                 sample_id=NULL, 
                                                 drop_list=NULL){
@@ -282,6 +289,7 @@ Recm <- R6Class("Recm",
                       self$file_name <- file_name
                       self$data_mode <- data_mode
                       self$signatures <- signatures
+                      self$pair_list <- pair_list
                       
                       if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
                         sep = ','
@@ -434,7 +442,7 @@ Recm <- R6Class("Recm",
                         bin_label <- self$binarize_label(label=self$train_label, x=li)
                         # then create the classifier object
 
-                        self$ensbl[[li]] <- Ensbl$new(name=li, 
+                        self$ensbl[[li]] <- Ensemble$new(name=li, 
                                                       obj_mode='ensemble',
                                                       size=size, 
                                                       data=self$train_data,
@@ -494,7 +502,7 @@ Recm <- R6Class("Recm",
                       #print(head(remapped_label))
                       # train a XGBoost that takes multiple labels.
 
-                      self$ensbl[["final"]] <- Ensbl$new(name="final",
+                      self$ensbl[["final"]] <- Ensemble$new(name="final",
                                                          obj_mode="final",
                                                          size=size, 
                                                          data=self$pred_table,
@@ -629,7 +637,11 @@ Recm <- R6Class("Recm",
                         sens <- sapply(cm_labels, function(a) self$sensitivity(cmdf, a))
                         
                         # then F1
-                        f1 <-(2*sens*prec) / (sens+prec)
+                        if (is.numeric(sens) & is.numeric(prec)) {
+                          f1 <-(2*sens*prec) / (sens+prec)
+                        } else {
+                          f1 <- 0
+                        }
                         
                         metrics <- data.frame(Label=cm_labels,
                                               Accuracy=acc,
@@ -711,6 +723,7 @@ Recm <- R6Class("Recm",
                                         data_split=NULL,
                                         data_mode=NULL,
                                         signatures=NULL,
+                                        pair_list=NULL,
                                         size=NULL,
                                         params=NULL,
                                         train_perc=NULL,
@@ -729,6 +742,7 @@ Recm <- R6Class("Recm",
                                      sep=sep,
                                      data_mode=data_mode,
                                      signatures=signatures,
+                                     pair_list=pair_list,
                                      label_name=label_name, 
                                      sample_id=sample_id,
                                      drop_list=drop_list)
