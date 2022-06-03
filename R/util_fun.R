@@ -42,6 +42,7 @@ plot_roc <- function(recm_obj, i) {
 }
 
 
+
 # This function will plot the ROC from
 # the ensemble supporting each class. 
 ensemble_rocs <- function(recm_obj){
@@ -50,8 +51,8 @@ ensemble_rocs <- function(recm_obj){
   
   par(mfcol=c(N,1))
   
-  for (j in 1:length(recm_obj$unique_labels)){
-    plot_roc(recm_obj, j)
+  for (i in 1:length(recm_obj$unique_labels)){
+      plot_roc(recm_obj, i)
   }
   
 }
