@@ -84,6 +84,9 @@ Robencla <- R6Class("Robencla",
                     #' @field cv_importance the list of importance from each fold.
                     cv_importance = NULL,
                     
+                    #' @field combine_function function for combining across ensemble
+                    combine_function = NULL,
+                    
                     #' @description Create a new `Recm` object.
                     #' @param name The object is named.
                     #' @return A new `recm` object.
@@ -714,7 +717,7 @@ Robencla <- R6Class("Robencla",
                     
                     
                     # Run CV or specify a split
-                    autopred = function(data_file=NULL,
+                    autocv = function(data_file=NULL,
                                         sep=NULL,
                                         label_name=NULL,
                                         sample_id=NULL,
@@ -736,6 +739,7 @@ Robencla <- R6Class("Robencla",
                       final_params[['objective']] <- 'multi:softmax'
                       final_params[['eval_metric']] <- 'mlogloss'
                       
+                      self$combine_function=combine_function
                       
                       # perform the data set up
                       self$data_setup(file_name=data_file,
@@ -788,7 +792,77 @@ Robencla <- R6Class("Robencla",
                         
                       } # done with CV
                     
-                    }# end autopred
+                    },# end autopred
+                    
+                    # Train a classifier
+                    autotrain = function(data_file=NULL,
+                                        sep=NULL,
+                                        label_name=NULL,
+                                        sample_id=NULL,
+                                        drop_list=NULL,
+                                        data_mode=NULL,
+                                        signatures=NULL,
+                                        pair_list=NULL,
+                                        size=NULL,
+                                        params=NULL,
+                                        train_perc=NULL,
+                                        combine_function=NULL
+                    ) {
+                      
+                      params[['objective']] <- "binary:logistic"
+                      params[['eval_metric']] <-'logloss'
+                      final_params <- params
+                      final_params[['objective']] <- 'multi:softmax'
+                      final_params[['eval_metric']] <- 'mlogloss'
+                      
+                      self$combine_function=combine_function
+                    
+                      # perform the data set up
+                      self$train_data_setup(
+                                      file_name=data_file,
+                                      sep=sep,
+                                      data_mode=data_mode,
+                                      signatures=signatures,
+                                      pair_list=pair_list,
+                                      label_name=label_name, 
+                                      sample_id=sample_id,
+                                      drop_list=drop_list)
+                      
+                      # building the first layer of predictors, each a binary prediction
+                      # on one factor in the target labels.
+                      # training and making predictions on the training data
+                      self$build_label_ensemble(size=size, 
+                                                params=params)$
+                        train_models(train_perc)$
+                        ensemble_predict(anne$train_data, combine_function)
+
+                      
+                      # then we build the output layer, trained on the predictions of the first layer
+                      self$build_final_ensemble(size=size, final_params)$
+                        train_final(train_perc)
+                      
+                      return(invisible(self))
+                    }, # end autotrain
+                    
+                    
+                    # make predictions on a new data set
+                    # after running autotrain()
+                    autotest = function(data_file=NULL,
+                                        sep=NULL,
+                                        label_name=NULL,
+                                        sample_id=NULL,
+                                        drop_list=NULL) {
+                    
+                      self$test_data_setup(file_name=data_file, 
+                                      sep=sep, 
+                                      label_name=label_name, 
+                                      sample_id=sample_id, 
+                                      drop_list=drop_list)
+                      
+                      self$predict(self$test_data, self$combine_function)
+                  
+                      return(invisible(self)) 
+                    }
                   ) # end public
       )
 
