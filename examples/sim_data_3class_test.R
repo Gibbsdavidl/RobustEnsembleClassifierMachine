@@ -1,13 +1,10 @@
 
 # Example using the autopred (auto-prediction) function.
 
-source('R/recm_obj.R')
-source('R/util_fun.R')
-source('R/deng_obj.R')
-source('R/enbl_obj.R')
+library(robencla)
 
 # our robust ensemble classifier machine
-anne <- Recm$new("Anne")
+anne <- Robencla$new("Anne")
 
 # xgboost parameters
 params <- list(max_depth=6,
@@ -29,7 +26,7 @@ anne$autopred(data_file='data/sim_data_3classes_train.csv',
 
 # metrics on the test split
 print("Test split")
-anne$final_classification_metrics() %>% print()
+anne$classification_metrics() %>% print()
 
 # NOW we'll get the test data set up and make predictions
 anne$test_data_setup(
@@ -51,11 +48,18 @@ print(head(res0))
 # confusion matrix
 print(table(res0$BestCalls, res0$Label))
 
+# metrics on the test set predictions
+print(
+  anne$classification_metrics() # uses CV results
+)
+
 # and get the importance of features in each ensemble member
 anne$importance()
 
 # plot the ROC curves for each class
-ensemble_rocs(anne)
+## IF THE ROC IS UPSIDE DOWN, SET FLIP=T
+ensemble_rocs(anne, flip=F) # uses the last fold trained.
+
 
 # From sim_data.R, where this test data were generated from:
 # Label 1 pairs are 2,7 and 1,9

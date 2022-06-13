@@ -2,7 +2,7 @@
 # Utility functions
 
 
-plot_roc <- function(recm_obj, i) {
+plot_roc <- function(recm_obj, i, flip=FALSE) {
   # for each ensemble object, we'll have a plot with multiple lines
   # related to predictions on test data.
   rocList <- list() # each member of teh ensemble will have a rocit
@@ -14,6 +14,10 @@ plot_roc <- function(recm_obj, i) {
       label <- recm_obj$binarize_label(recm_obj$test_label, recm_obj$unique_labels[i])
     } else {
       label <- recm_obj$test_label
+    }
+    
+    if (flip) {
+      label <- 1-label
     }
     
     if (length(unique(label)) > 2) {
@@ -45,14 +49,16 @@ plot_roc <- function(recm_obj, i) {
 
 # This function will plot the ROC from
 # the ensemble supporting each class. 
-ensemble_rocs <- function(recm_obj){
+
+## IF THE ROC IS UPSIDE DOWN, SET FLIP=T
+ensemble_rocs <- function(recm_obj, flip=FALSE){
   
   N <- length(recm_obj$unique_labels)
   
   par(mfcol=c(N,1))
   
   for (i in 1:length(recm_obj$unique_labels)){
-      plot_roc(recm_obj, i)
+      plot_roc(recm_obj, i, flip)
   }
   
 }

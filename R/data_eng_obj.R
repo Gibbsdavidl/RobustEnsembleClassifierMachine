@@ -44,23 +44,27 @@ data_bin_2 <- function(x) {
 #' ann <- Recm$new("Ann")
 #' 
 #' @export
-Deng <- R6Class("Deng",
+Data_eng <- R6Class("Data_eng",
                 public = list(
                   
-                  #' @field what type of engineering to do
+                  #' @field data_mode what type of engineering to do
                   data_mode = NULL,
                   
-                  #' @field if there are signatures to be used
+                  #' @field signatures if there are signatures to be used
                   signatures = NULL,
                   
+                  #' @field pair_list list of column names to create pairs
+                  pair_list = NULL,
                   
                   #' @description Create a new `Recm` object.
                   #' @param name The object is named.
                   #' @return A new `recm` object.
                   initialize = function(data_mode = NULL,
-                                        signatures = NULL) {
+                                        signatures = NULL,
+                                        pair_list = NULL) {
                     self$data_mode <- data_mode
                     self$signatures <- signatures
+                    self$pair_list <- pair_list
                     
                     if (!all(data_mode %in% c('pairs','sigpairs','quartiles','tertiles','binary','ranks','original'))) {
                       print("ERROR:  please choose a valid collection of data modes: ")
@@ -74,12 +78,6 @@ Deng <- R6Class("Deng",
                   # data engineering
                   #' @description Data engineering, replaces the object's data.table.
                   data_eng = function(data=NULL) {
-                    
-                    if (!all(self$data_mode %in% c('pairs','sigpairs','quartiles','tertiles','binary','ranks','original'))) {
-                      print("ERROR:  please choose a valid collection of data modes: ")
-                      print('pairs,sigpairs,quartiles,tertiles,binary,ranks,original')
-                      stop(paste0('data_mode, ', self$data_mode  ,' wrong value'))
-                    }
                     
                     rankdat <- NULL
                     pairdat <- NULL
@@ -119,12 +117,23 @@ Deng <- R6Class("Deng",
                     
                     if ('pairs' %in% self$data_mode) {
                       # if mode includes 'pairs' then we need to make var-pairs
+                      if (!is.null(self$pair_list)) {
+                        pair_list_format <- gsub(' ', '_', self$pair_list)
+                        if (!all(pair_list_format %in% colnames(data))) {
+                          print("ERROR: pair_list must be column names in data.")
+                          stop(paste0('pair_list contains invalid value'))
+                        }
+                        
+                        subdat <- data[, pair_list_format, with=FALSE]  ## subset to only what's in the pair_list
+                      } else {
+                        subdat <- data
+                      }
                       newcol_names <- c()
                       newcol_dat <- list()
-                      cols <- colnames(data)
+                      cols <- colnames(subdat)
                       for (ci in 1:(length(cols)-1)) {
                         for (cj in (ci+1):length(cols)) {
-                          res0 <- as.numeric(data[,.SD,.SDcols=ci] > data[,.SD,.SDcols=cj])
+                          res0 <- as.numeric(subdat[,.SD,.SDcols=ci] > subdat[,.SD,.SDcols=cj])
                           this_new_col <- paste0(cols[ci],'_X_', cols[cj])
                           newcol_names <- c(newcol_names, this_new_col)
                           newcol_dat[[this_new_col]] <- res0

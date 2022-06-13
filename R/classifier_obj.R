@@ -9,7 +9,7 @@
 #'
 #' 
 #' @export
-Recm <- R6Class("Recm",
+Robencla <- R6Class("Robencla",
                   public = list(
                     
                     #' @field name the object's name
@@ -20,6 +20,9 @@ Recm <- R6Class("Recm",
                     
                     #' @field signatures lists of variables, must be in data, that will be used together, and compared to other signatures
                     signatures = NULL,
+                    
+                    #' @field pair_list a list of column names in the data, that will become paired data
+                    pair_list = NULL,
                     
                     #' @field file_name the data file
                     file_name = NULL,
@@ -81,6 +84,9 @@ Recm <- R6Class("Recm",
                     #' @field cv_importance the list of importance from each fold.
                     cv_importance = NULL,
                     
+                    #' @field combine_function function for combining across ensemble
+                    combine_function = NULL,
+                    
                     #' @description Create a new `Recm` object.
                     #' @param name The object is named.
                     #' @return A new `recm` object.
@@ -137,7 +143,7 @@ Recm <- R6Class("Recm",
                     data_eng = function(data_source=NULL) {
                       
                       # create a new data engineering object
-                      this_deng <- Deng$new(self$data_mode, self$signatures)
+                      this_deng <- Data_eng$new(self$data_mode, self$signatures, self$pair_list)
                                           
                       if (data_source == 'train') {
                         self$train_data <- this_deng$data_eng(self$train_data)
@@ -155,7 +161,7 @@ Recm <- R6Class("Recm",
                     #' @param label_name string, the column name indicating the target label
                     #' @param drop_list a vector of strings indicating what columns to drop
                     #' @param data_split numeric value, the percent of data to use in training 
-                    data_split_fun = function(data_split, cv_rounds, i) {
+                    data_split_fun = function(data_split, cv_rounds=1, i=1) {
                       
                       if (cv_rounds == 1) {
                         # to split the data into training and test components
@@ -207,6 +213,7 @@ Recm <- R6Class("Recm",
                                           sep=NULL, 
                                           data_mode=NULL, 
                                           signatures=NULL, 
+                                          pair_list=NULL,
                                           label_name=NULL, 
                                           sample_id=NULL,
                                           drop_list=NULL, 
@@ -215,16 +222,18 @@ Recm <- R6Class("Recm",
                       self$file_name <- file_name
                       self$data_mode <- data_mode
                       self$signatures <- signatures
+                      self$pair_list <- pair_list
+                      self$data_split <- data_split
                       
                       if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
                         sep = ','
-                      }
-                      else if (is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
+                      } else if (is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
                         sep = '\t'
                       } else if (is.null(sep)) {
                         stop('Please specify the sep parameter... or use a .csv or .tsv file.')
                       }
                       
+                      # read in the data
                       thisdata <- data.table::fread(file=file_name, sep=sep, header=T)
                       self$data <- thisdata[sample(nrow(thisdata)),]
                       self$data_colnames <- colnames(self$data)
@@ -275,6 +284,7 @@ Recm <- R6Class("Recm",
                                                 sep=NULL, 
                                                 data_mode=NULL, 
                                                 signatures=NULL, 
+                                                pair_list=NULL,
                                                 label_name=NULL, 
                                                 sample_id=NULL, 
                                                 drop_list=NULL){
@@ -282,6 +292,7 @@ Recm <- R6Class("Recm",
                       self$file_name <- file_name
                       self$data_mode <- data_mode
                       self$signatures <- signatures
+                      self$pair_list <- pair_list
                       
                       if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
                         sep = ','
@@ -434,7 +445,7 @@ Recm <- R6Class("Recm",
                         bin_label <- self$binarize_label(label=self$train_label, x=li)
                         # then create the classifier object
 
-                        self$ensbl[[li]] <- Ensbl$new(name=li, 
+                        self$ensbl[[li]] <- Ensemble$new(name=li, 
                                                       obj_mode='ensemble',
                                                       size=size, 
                                                       data=self$train_data,
@@ -494,7 +505,7 @@ Recm <- R6Class("Recm",
                       #print(head(remapped_label))
                       # train a XGBoost that takes multiple labels.
 
-                      self$ensbl[["final"]] <- Ensbl$new(name="final",
+                      self$ensbl[["final"]] <- Ensemble$new(name="final",
                                                          obj_mode="final",
                                                          size=size, 
                                                          data=self$pred_table,
@@ -629,7 +640,11 @@ Recm <- R6Class("Recm",
                         sens <- sapply(cm_labels, function(a) self$sensitivity(cmdf, a))
                         
                         # then F1
-                        f1 <-(2*sens*prec) / (sens+prec)
+                        if (is.numeric(sens) & is.numeric(prec)) {
+                          f1 <-(2*sens*prec) / (sens+prec)
+                        } else {
+                          f1 <- 0
+                        }
                         
                         metrics <- data.frame(Label=cm_labels,
                                               Accuracy=acc,
@@ -702,7 +717,7 @@ Recm <- R6Class("Recm",
                     
                     
                     # Run CV or specify a split
-                    autopred = function(data_file=NULL,
+                    autocv = function(data_file=NULL,
                                         sep=NULL,
                                         label_name=NULL,
                                         sample_id=NULL,
@@ -711,6 +726,7 @@ Recm <- R6Class("Recm",
                                         data_split=NULL,
                                         data_mode=NULL,
                                         signatures=NULL,
+                                        pair_list=NULL,
                                         size=NULL,
                                         params=NULL,
                                         train_perc=NULL,
@@ -723,12 +739,14 @@ Recm <- R6Class("Recm",
                       final_params[['objective']] <- 'multi:softmax'
                       final_params[['eval_metric']] <- 'mlogloss'
                       
+                      self$combine_function=combine_function
                       
                       # perform the data set up
                       self$data_setup(file_name=data_file,
                                      sep=sep,
                                      data_mode=data_mode,
                                      signatures=signatures,
+                                     pair_list=pair_list,
                                      label_name=label_name, 
                                      sample_id=sample_id,
                                      drop_list=drop_list)
@@ -774,7 +792,77 @@ Recm <- R6Class("Recm",
                         
                       } # done with CV
                     
-                    }# end autopred
+                    },# end autopred
+                    
+                    # Train a classifier
+                    autotrain = function(data_file=NULL,
+                                        sep=NULL,
+                                        label_name=NULL,
+                                        sample_id=NULL,
+                                        drop_list=NULL,
+                                        data_mode=NULL,
+                                        signatures=NULL,
+                                        pair_list=NULL,
+                                        size=NULL,
+                                        params=NULL,
+                                        train_perc=NULL,
+                                        combine_function=NULL
+                    ) {
+                      
+                      params[['objective']] <- "binary:logistic"
+                      params[['eval_metric']] <-'logloss'
+                      final_params <- params
+                      final_params[['objective']] <- 'multi:softmax'
+                      final_params[['eval_metric']] <- 'mlogloss'
+                      
+                      self$combine_function=combine_function
+                    
+                      # perform the data set up
+                      self$train_data_setup(
+                                      file_name=data_file,
+                                      sep=sep,
+                                      data_mode=data_mode,
+                                      signatures=signatures,
+                                      pair_list=pair_list,
+                                      label_name=label_name, 
+                                      sample_id=sample_id,
+                                      drop_list=drop_list)
+                      
+                      # building the first layer of predictors, each a binary prediction
+                      # on one factor in the target labels.
+                      # training and making predictions on the training data
+                      self$build_label_ensemble(size=size, 
+                                                params=params)$
+                        train_models(train_perc)$
+                        ensemble_predict(anne$train_data, combine_function)
+
+                      
+                      # then we build the output layer, trained on the predictions of the first layer
+                      self$build_final_ensemble(size=size, final_params)$
+                        train_final(train_perc)
+                      
+                      return(invisible(self))
+                    }, # end autotrain
+                    
+                    
+                    # make predictions on a new data set
+                    # after running autotrain()
+                    autotest = function(data_file=NULL,
+                                        sep=NULL,
+                                        label_name=NULL,
+                                        sample_id=NULL,
+                                        drop_list=NULL) {
+                    
+                      self$test_data_setup(file_name=data_file, 
+                                      sep=sep, 
+                                      label_name=label_name, 
+                                      sample_id=sample_id, 
+                                      drop_list=drop_list)
+                      
+                      self$predict(self$test_data, self$combine_function)
+                  
+                      return(invisible(self)) 
+                    }
                   ) # end public
       )
 

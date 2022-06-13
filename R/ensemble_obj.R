@@ -12,7 +12,7 @@
 #' The ensbl object contains a list of xgboost objects
 #'
 #'
-Ensbl <- R6Class("Ensbl",
+Ensemble <- R6Class("Ensemble",
                 public = list(
                   bstl = list(),   # booster list
                   name = NULL,     # name of this member
@@ -76,7 +76,6 @@ Ensbl <- R6Class("Ensbl",
                     return(res0)
                     
                   },
-                  
                   
                   
                   train_models = function(perc) {

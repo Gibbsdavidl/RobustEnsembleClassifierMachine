@@ -1,5 +1,6 @@
 
 
+
 # Example using the autopred (auto-prediction) function.
 
 library(robencla)
@@ -22,30 +23,36 @@ params <- list(max_depth=6,
                verbose=0)
 
 # split the data, train and test
-anne$autopred(data_file='data/Breast Cancer Prediction.csv',
-             label_name='Class',
-             sample_id = 'Sample code number',
-             cv_rounds=3,
-             data_split=0.60,
-             data_mode=c('pairs', 'sigpairs'), # pairs,sigpairs,quartiles,tertiles,binary,ranks,original
-             pair_list=my_pairs,
-             signatures=sigs,
-             size=11,
-             params=params,
-             train_perc=0.3,
-             combine_function='median')
+anne$autotrain(data_file='data/bcp_train_data.csv',
+              label_name='Class',
+              sample_id = 'Sample code number',
+              data_mode=c('pairs', 'sigpairs'), # pairs,sigpairs,quartiles,tertiles,binary,ranks,original
+              pair_list=my_pairs,
+              signatures=sigs,
+              size=11,
+              params=params,
+              train_perc=0.3,
+              combine_function='median')
+
+
+anne$autotest(data_file='data/bcp_test_data.csv',
+              label_name='Class',
+              sample_id = 'Sample code number',
+              )
+
+
 
 # print the test data results table
 print(
   head(
-    anne$cv_results
-    )
+    anne$results(include_label = T)
   )
+)
 
 # metrics on the test set predictions
 print(
-  anne$classification_metrics() # uses CV results
-  )
+  anne$classification_metrics(use_cv_results = F) # uses CV results
+)
 
 # and get the importance of features in each ensemble member
 print(
@@ -55,8 +62,6 @@ print(
 # plot the ROC curves for each class
 ## IF THE ROC IS UPSIDE DOWN, SET FLIP=T
 ensemble_rocs(anne, flip=F) # uses the last fold trained.
-
-print(dim(anne$cv_results))
 
 # plot the ROC curves for each class
 #ensemble_rocs(anne, flip=T) # uses the last fold trained.
