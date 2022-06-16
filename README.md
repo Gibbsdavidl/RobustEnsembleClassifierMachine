@@ -133,6 +133,7 @@ anne$autotrain(data_file='data/bcp_train_data.csv',
               
 # now we apply the classifier to a test set.
 anne$autotest(data_file = 'data/bcp_test_data.csv',
+              label_name='Class',
               sample_id = 'Sample code number')
 
 
