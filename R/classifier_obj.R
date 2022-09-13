@@ -284,8 +284,7 @@ Robencla <- R6Class("Robencla",
                         for (dvi in data_var_idx) {
                           self$data[,dvi] <- runif(n=nrow(self$data))
                         }
-
-                    }
+                      }
                       
                       # DATA ENGINEERING
                       self$data_eng('data')
@@ -363,8 +362,9 @@ Robencla <- R6Class("Robencla",
                         for (dvi in data_var_idx) {
                           self$train_data[,dvi] <- runif(n=nrow(self$train_data))
                         }
+                      }
 
-                        # DATA ENGINEERING
+                      # DATA ENGINEERING
                       self$data_eng('train')
                       # and record the unique categories in labels 
                       self$unique_labels <- unique(self$train_label)
@@ -412,8 +412,7 @@ Robencla <- R6Class("Robencla",
                           set(self$test_data, j = label_name, value = NULL)
                         }
                       }
-                      
-                      
+
                       if ((!is.null(sample_id))) { # already know that the col names match
                         test_sample_id <- gsub(' ', '_', sample_id)
                         self$test_sample_ids <- sapply(self$test_data[[test_sample_id]], as.character)
@@ -438,7 +437,7 @@ Robencla <- R6Class("Robencla",
                         for (dvi in data_var_idx) {
                           self$test_data[,dvi] <- runif(n=nrow(self$test_data))
                         }
-
+                      }
 
                         # DATA ENGINEERING
                       self$data_eng('test')
