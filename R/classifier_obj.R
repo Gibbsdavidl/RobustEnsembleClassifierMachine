@@ -871,7 +871,7 @@ Robencla <- R6Class("Robencla",
                       self$build_label_ensemble(size=size, 
                                                 params=params)$
                         train_models(train_perc)$
-                        ensemble_predict(anne$train_data, combine_function)
+                        ensemble_predict(self$train_data, combine_function)
 
                       
                       # then we build the output layer, trained on the predictions of the first layer
