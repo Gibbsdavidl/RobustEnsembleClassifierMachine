@@ -353,8 +353,18 @@ Robencla <- R6Class("Robencla",
                       } else if ((!is.null(drop_list))) {
                         stop('Make sure the drop_list contains column names found in the data!')
                       }
-                      
-                      # DATA ENGINEERING
+
+                      # if we have some columns that have zero variance, fix that
+                      data_var <- self$train_data[, lapply(.SD, var, na.rm=T)]
+                      data_var_idx <- which(data_var == 0.0)
+                      if (length(data_var_idx) > 0) {
+                        print("TRAINING DATA CONTAINS ZERO VARIANCE COLUMNS")
+                        print("...filling with random noise...")
+                        for (dvi in data_var_idx) {
+                          self$train_data[,dvi] <- runif(n=nrow(self$train_data))
+                        }
+
+                        # DATA ENGINEERING
                       self$data_eng('train')
                       # and record the unique categories in labels 
                       self$unique_labels <- unique(self$train_label)
@@ -419,7 +429,18 @@ Robencla <- R6Class("Robencla",
                         stop('Make sure the drop_list contains column names found in the data!')
                       }
 
-                      # DATA ENGINEERING
+                      # if we have some columns that have zero variance, fix that
+                      data_var <- self$test_data[, lapply(.SD, var, na.rm=T)]
+                      data_var_idx <- which(data_var == 0.0)
+                      if (length(data_var_idx) > 0) {
+                        print("TEST DATA CONTAINS ZERO VARIANCE COLUMNS")
+                        print("...filling with random noise...")
+                        for (dvi in data_var_idx) {
+                          self$test_data[,dvi] <- runif(n=nrow(self$test_data))
+                        }
+
+
+                        # DATA ENGINEERING
                       self$data_eng('test')
 
                       return(invisible(self))
