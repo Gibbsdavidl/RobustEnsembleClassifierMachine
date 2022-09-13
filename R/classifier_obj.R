@@ -238,14 +238,16 @@ Robencla <- R6Class("Robencla",
                       self$data <- thisdata[sample(nrow(thisdata)),]
                       self$data_colnames <- colnames(self$data)
                       colnames(self$data) <- gsub(" ", "_", colnames(self$data))
-                      
+
+                      # make sure we have named label column in the parameters
                       if (is.null(label_name)) {
                         stop("Make sure label_name is not null!")
                       } else {
                         self$label <- sapply(self$data[[label_name]], as.character)
                         label_name <- gsub(' ', '_', label_name)
                       }
-                      
+
+                      # make sure we have a sample ID column
                       if ((!is.null(sample_id)) && sample_id %in% self$data_colnames) {
                         self$sample_id <- gsub(' ', '_', sample_id)
                         self$sample_ids <- sapply(self$data[[self$sample_id]], as.character)
@@ -253,22 +255,37 @@ Robencla <- R6Class("Robencla",
                       } else {
                         self$sample_ids <- 1:nrow(self$data)
                       }
-                      
+
+                      # if the drop list is defined, standardize the names
                       if (!is.null(drop_list)) {
                         drop_list <- gsub(' ', '_', drop_list)
                       }
-                      
+
+                      # make sure we have a label column
                       if (!label_name %in% colnames(self$data)) {
                         stop('Make sure the label name matches one of the columns!')
                       } else {
                         set(self$data, j = label_name, value = NULL)
                       }
 
+                      # if we have a drop list, drop those columns
                       if ((!is.null(drop_list)) && all(sapply(drop_list, function(a) a %in% colnames(self$data)))) {
                         set(self$data, j = drop_list, value = NULL)
                       } else if ((!is.null(drop_list))) {
                         stop('Make sure the drop_list contains column names found in the data!')
                       }
+
+                      # if we have some columns that have zero variance, fix that
+                      data_var <- self$data[, lapply(.SD, var, na.rm=T)]
+                      data_var_idx <- which(data_var == 0.0)
+                      if (length(data_var_idx) > 0) {
+                        print("DATA CONTAINS ZERO VARIANCE COLUMNS")
+                        print("...filling with random noise...")
+                        for (dvi in data_var_idx) {
+                          self$data[,dvi] <- runif(n=nrow(self$data))
+                        }
+
+                    }
                       
                       # DATA ENGINEERING
                       self$data_eng('data')
