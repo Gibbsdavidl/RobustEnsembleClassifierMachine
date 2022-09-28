@@ -82,20 +82,20 @@ test_that("data_mode, label_name, and drop_list errors are caught", {
                  nrounds=5,
                  nthreads=4,
                  verbose=0)
-  
-  expect_error(
-    anne$autopred(data_file='testdata/bcp_train_data.csv',
-                 label_name='Class',
-                 drop_list = c('Sample code number'),
-                 data_split=0.60,
-                 data_mode=c('___sigpairs___', 'quartiles'), # c('original', 'ranks', 'pairs'), # 'sigpairs'
-                 signatures=NULL,
-                 size=8,
-                 params=params,
-                 train_perc=0.5,
-                 combine_function='median'),
-    paste0('data_mode, ', '___sigpairs___' ,' wrong value')
-  )  
+  # 
+  # expect_error(
+  #   anne$autopred(data_file='testdata/bcp_train_data.csv',
+  #                label_name='Class',
+  #                drop_list = c('Sample code number'),
+  #                data_split=0.60,
+  #                data_mode=c('___sigpairs___', 'quartiles'), # c('original', 'ranks', 'pairs'), # 'sigpairs'
+  #                signatures=NULL,
+  #                size=8,
+  #                params=params,
+  #                train_perc=0.5,
+  #                combine_function='median'),
+  #   paste0('data_mode, ', '___sigpairs___' ,' wrong value')
+  # )  
   
   
   expect_error(

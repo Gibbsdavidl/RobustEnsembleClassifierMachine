@@ -276,14 +276,10 @@ Robencla <- R6Class("Robencla",
                       }
 
                       # if we have some columns that have zero variance, fix that
-                      data_var <- self$data[, lapply(.SD, var, na.rm=T)]
+                      data_var <- self$data[, lapply(.SD, var, na.rm=TRUE)]
                       data_var_idx <- which(data_var == 0.0)
                       if (length(data_var_idx) > 0) {
-                        print("DATA CONTAINS ZERO VARIANCE COLUMNS")
-                        print("...filling with random noise...")
-                        for (dvi in data_var_idx) {
-                          self$data[,dvi] <- runif(n=nrow(self$data))
-                        }
+                        stop("DATA CONTAINS ZERO VARIANCE COLUMNS.\nThis will need to be fixed. \n Ideas: Drop or fill with random noise...")
                       }
                       
                       # DATA ENGINEERING
