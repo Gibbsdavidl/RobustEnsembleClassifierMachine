@@ -350,7 +350,7 @@ Robencla <- R6Class("Robencla",
                       }
 
                       # if we have some columns that have zero variance, fix that
-                      data_var <- self$train_data[, lapply(.SD, var, na.rm=T)]
+                      data_var <- self$train_data[, lapply(.SD, var, na.rm=TRUE)]
                       data_var_idx <- which(data_var == 0.0)
                       if (length(data_var_idx) > 0) {
                         print("TRAINING DATA CONTAINS ZERO VARIANCE COLUMNS")
@@ -425,7 +425,7 @@ Robencla <- R6Class("Robencla",
                       }
 
                       # if we have some columns that have zero variance, fix that
-                      data_var <- self$test_data[, lapply(.SD, var, na.rm=T)]
+                      data_var <- self$test_data[, lapply(.SD, var, na.rm=TRUE)]
                       data_var_idx <- which(data_var == 0.0)
                       if (length(data_var_idx) > 0) {
                         print("TEST DATA CONTAINS ZERO VARIANCE COLUMNS")
