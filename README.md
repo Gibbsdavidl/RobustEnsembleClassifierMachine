@@ -126,6 +126,7 @@ anne$autotrain(data_file='data/bcp_train_data.csv',
               sample_id = 'Sample code number',
               data_mode=c('sigpairs','pairs','quartiles'), # pairs,sigpairs,quartiles,tertiles,binarize,ranks,original #
               signatures=sigs,
+              pair_list=pair_list,  # subset to these genes.
               size=11,
               params=params,
               train_perc=0.5,
