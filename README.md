@@ -23,11 +23,16 @@ sigs = list(Sig1=c('Uniformity of Cell Shape','Uniformity of Cell Size', 'Margin
 pair_list <- c('Uniformity of Cell Shape', 'Uniformity of Cell Size', 'Marginal Adhesion')
 
 # XGBoost parameters to pass to each sub-classifier in the ensembles
-params <- list(max_depth=6,
-               eta=0.2,
-               nrounds=12,
-               nthreads=4,
+params <- list(
+               max_depth=6,    # "height" of the tree, 6 is actually default. I think about 12 seems better.  (xgboost parameter)
+               eta=0.2,        # this is the learning rate. smaller values slow it down, more conservative   (xgboost parameter)
+               nrounds=24,     # number of rounds of training, lower numbers less overfitting (potentially)  (xgboost parameter)
+               nthreads=4,     # parallel threads
+               gamma=1,        # Minimum loss reduction required to again partition a leaf node. higher number ~ more conservative (xgboost parameter)
+               lambda=1.5,     # L2 regularization term on weights, higher number ~ more conservative (xgboost parameter)
+               alpha=0.5,      # L1 regularization term on weights. higher number ~ more conservative (xgboost parameter)
                verbose=0)
+               ###More on the xgboost parameters: https://xgboost.readthedocs.io/en/latest/parameter.html
 
 # CROSS VALIDATION:  split the data, train and test, repeat over folds, all samples get a prediction.
 
@@ -113,11 +118,16 @@ sigs = list(Sig1=c('Uniformity of Cell Shape','Uniformity of Cell Size', 'Margin
 pair_list <- c('Uniformity of Cell Shape','Uniformity of Cell Size', 'Marginal Adhesion')
 
 # XGBoost parameters to pass to each sub-classifier in the ensembles
-params <- list(max_depth=6,
-               eta=0.2,
-               nrounds=12,
-               nthreads=4,
+params <- list(
+               max_depth=6,    # "height" of the tree, 6 is actually default. I think about 12 seems better.  (xgboost parameter)
+               eta=0.2,        # this is the learning rate. smaller values slow it down, more conservative   (xgboost parameter)
+               nrounds=24,     # number of rounds of training, lower numbers less overfitting (potentially)  (xgboost parameter)
+               nthreads=4,     # parallel threads
+               gamma=1,        # Minimum loss reduction required to again partition a leaf node. higher number ~ more conservative (xgboost parameter)
+               lambda=1.5,     # L2 regularization term on weights, higher number ~ more conservative (xgboost parameter)
+               alpha=0.5,      # L1 regularization term on weights. higher number ~ more conservative (xgboost parameter)
                verbose=0)
+               ###More on the xgboost parameters: https://xgboost.readthedocs.io/en/latest/parameter.html
 
 # First we use the training data
 anne$autotrain(data_file='data/bcp_train_data.csv',
