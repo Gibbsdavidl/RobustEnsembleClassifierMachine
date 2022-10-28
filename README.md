@@ -4,7 +4,9 @@
 
 # Transforms data into robust forms and trains an ensemble of XGboost classifiers.
 
-# First example: cross validation, second example: train and test on separate files.
+# First example: cross validation, 
+
+# second example: train and test on separate files.
 
 ```
 devtools::install_github("gibbsdavidl/robencla")
