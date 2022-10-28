@@ -72,9 +72,8 @@ anne$autocv(
 # If using cross validation, the table will have an 
 # entry for each sample, otherwise only for the test set.
 print(
-  head(
-    anne$results(include_label=T)
-    )
+  df <- anne$cv_results
+  table(True=df$Label, Call=df$BestCalls)
   )
 
 # Prediction metrics on the test set predictions
