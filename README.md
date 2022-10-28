@@ -2,11 +2,11 @@
 
 # robencla the rob(ust) en(semble) cla(ssifier)
 
-# Transforms data into robust forms and trains an ensemble of XGboost classifiers.
+## Transforms data into robust forms and trains an ensemble of XGboost classifiers.
 
-# First example: cross validation, 
+## First example: cross validation, 
 
-# second example: train and test on separate files.
+## second example: train and test on separate files.
 
 ```
 devtools::install_github("gibbsdavidl/robencla")
