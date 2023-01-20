@@ -227,12 +227,15 @@ Robencla <- R6Class("Robencla",
                       self$pair_list <- pair_list
                       self$data_split <- data_split
                       
-                      if (is.null(data_frame) & is.null(sep) & stringr::str_detect(file_name, '.csv')) {
-                        sep = ','
-                      } else if (is.null(data_frame) & is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
-                        sep = '\t'
-                      } else if (!is.null(file_name) & is.null(sep)) {
-                        stop('Please specify the sep parameter... or use a .csv or .tsv file.')
+                      # bug file_name checked although null
+                      if (!is.null(file_name)) {
+                        if (is.null(data_frame) & is.null(sep) & stringr::str_detect(file_name, '.csv')) {
+                          sep = ','
+                        } else if (is.null(data_frame) & is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
+                          sep = '\t'
+                        } else if (!is.null(file_name) & is.null(sep)) {
+                          stop('Please specify the sep parameter... or use a .csv or .tsv file.')
+                        }
                       }
                       
                       # read in the data or convert to a data.table
@@ -317,13 +320,15 @@ Robencla <- R6Class("Robencla",
                       self$signatures <- signatures
                       self$pair_list <- pair_list
                       
-                      if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
-                        sep = ','
-                      }
-                      else if (is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
-                        sep = '\t'
-                      } else if (!is.null(file_name) & is.null(sep)) {
-                        stop('Please specify the sep parameter... or use a .csv or .tsv file.')
+                      if (!is.null(file_name)) {
+                        if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
+                          sep = ','
+                        }
+                        else if (is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
+                          sep = '\t'
+                        } else if (!is.null(file_name) & is.null(sep)) {
+                          stop('Please specify the sep parameter... or use a .csv or .tsv file.')
+                        }
                       }
                       
                       # read in the data or convert to a data.table
@@ -399,15 +404,15 @@ Robencla <- R6Class("Robencla",
                                                label_name=NULL, 
                                                sample_id=NULL, 
                                                drop_list=NULL){
-                      #READ DATA
-                      self$file_name <- file_name
-                      if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
-                        sep = ','
-                      }
-                      else if (is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
-                        sep = '\t'
-                      } else if (!is.null(file_name) & is.null(sep)) {
-                        stop('Please specify the sep parameter... or use a .csv or .tsv file.')
+                      if (!is.null(file_name)) {
+                        if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
+                          sep = ','
+                        }
+                        else if (is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
+                          sep = '\t'
+                        } else if (!is.null(file_name) & is.null(sep)) {
+                          stop('Please specify the sep parameter... or use a .csv or .tsv file.')
+                        }
                       }
                       
                       # read in the data or convert to a data.table
