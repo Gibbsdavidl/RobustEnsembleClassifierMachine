@@ -39,7 +39,11 @@ params <- list(
 # CROSS VALIDATION:  split the data, train and test, repeat over folds, all samples get a prediction.
 
 anne$autocv(
+
   # The data to use for training
+  data_frame=data.table::fread('data/bcp_train_data.csv', sep=',', header=T),
+
+  # !!! OR !!! leave data_frame=NULL, and pass in a file name for the data to use for training
   data_file='data/bcp_train_data.csv', # subset of data/Breast Cancer Prediction.csv',
   
   # The name of the column containing the training label
@@ -132,19 +136,23 @@ params <- list(
                ###More on the xgboost parameters: https://xgboost.readthedocs.io/en/latest/parameter.html
 
 # First we use the training data
-anne$autotrain(data_file='data/bcp_train_data.csv',
-              label_name='Class',
-              sample_id = 'Sample code number',
-              data_mode=c('sigpairs','pairs','quartiles'), # pairs,sigpairs,quartiles,tertiles,binarize,ranks,original #
-              signatures=sigs,
-              pair_list=pair_list,  # subset to these genes.
-              size=11,
-              params=params,
-              train_perc=0.5,
-              combine_function='median')
+anne$autotrain(data_frame=data.table::fread('data/bcp_train_data.csv', sep=',', header=T),
+               # !!! OR !!! leave data_frame=NULL, and pass in a file name for the data to use for training
+               # data_file='data/bcp_train_data.csv', # subset of data/Breast Cancer Prediction.csv',
+               label_name='Class',
+               sample_id = 'Sample code number',
+               data_mode=c('sigpairs','pairs'), # pairs,sigpairs,quartiles,tertiles,binarize,ranks,original #
+               signatures=sigs,
+               pair_list=pair_list,  # subset to these genes.
+               size=11,
+               params=params,
+               train_perc=0.5,
+               combine_function='median')
               
 # now we apply the classifier to a test set.
-anne$autotest(data_file = 'data/bcp_test_data.csv',
+anne$autotest(
+              data_frame=data.table::fread('data/bcp_test_data.csv', sep=',', header=T),
+              ### OR ### data_file = 'data/bcp_test_data.csv',
               label_name='Class',
               sample_id = 'Sample code number')
 
