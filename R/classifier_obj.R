@@ -203,7 +203,7 @@ Robencla <- R6Class("Robencla",
                     
 
                     #' @description Does some setup processing on the data file, drop columns, split data into train and test, and identify the label column.
-                    #' @param dataframe data.frame, data.frame or data.table, if NULL, then use file_name.
+                    #' @param data_frame data.frame, data.frame or data.table, if NULL, then use file_name.
                     #' @param file_name string, the name of the file
                     #' @param sep string, the separating character
                     #' @param data_mode string, 
@@ -227,20 +227,20 @@ Robencla <- R6Class("Robencla",
                       self$pair_list <- pair_list
                       self$data_split <- data_split
                       
-                      if (is.null(dataframe) & is.null(sep) & stringr::str_detect(file_name, '.csv')) {
+                      if (is.null(data_frame) & is.null(sep) & stringr::str_detect(file_name, '.csv')) {
                         sep = ','
-                      } else if (is.null(dataframe) & is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
+                      } else if (is.null(data_frame) & is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
                         sep = '\t'
                       } else if (!is.null(file_name) & is.null(sep)) {
                         stop('Please specify the sep parameter... or use a .csv or .tsv file.')
                       }
                       
                       # read in the data or convert to a data.table
-                      if (is.null(dataframe) & !is.null(file_name)) {
+                      if (is.null(data_frame) & !is.null(file_name)) {
                         thisdata <- data.table::fread(file=file_name, sep=sep, header=T)
                         
-                      } else if (!is.null(dataframe) & is.null(file_name)) {
-                        thisdata <- as.data.table(dataframe)
+                      } else if (!is.null(data_frame) & is.null(file_name)) {
+                        thisdata <- as.data.table(data_frame)
                       } else {
                         stop('Specify only ONE of data_frame or file_name.')
                       }
@@ -327,11 +327,11 @@ Robencla <- R6Class("Robencla",
                       }
                       
                       # read in the data or convert to a data.table
-                      if (is.null(dataframe) & !is.null(file_name)) {
+                      if (is.null(data_frame) & !is.null(file_name)) {
                         thisdata <- data.table::fread(file=file_name, sep=sep, header=T)
                         
-                      } else if (!is.null(dataframe) & is.null(file_name)) {
-                        thisdata <- as.data.table(dataframe)
+                      } else if (!is.null(data_frame) & is.null(file_name)) {
+                        thisdata <- as.data.table(data_frame)
                       } else {
                         stop('Specify only ONE of data_frame or file_name.')
                       }
@@ -411,10 +411,10 @@ Robencla <- R6Class("Robencla",
                       }
                       
                       # read in the data or convert to a data.table
-                      if (is.null(dataframe) & !is.null(file_name)) {
+                      if (is.null(data_frame) & !is.null(file_name)) {
                         thisdata <- data.table::fread(file=file_name, sep=sep, header=T)
-                      } else if (!is.null(dataframe) & is.null(file_name)) {
-                        thisdata <- as.data.table(dataframe)
+                      } else if (!is.null(data_frame) & is.null(file_name)) {
+                        thisdata <- as.data.table(data_frame)
                       } else {
                         stop('Specify only ONE of data_frame or file_name.')
                       }
