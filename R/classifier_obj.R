@@ -33,10 +33,10 @@ Robencla <- R6Class("Robencla",
                     #' @field the data column used as label, the target
                     label = NULL,
                     
-                    #' @sample_id the data column used as label, the target
+                    #' @sample_id the data column used to identify samples
                     sample_id = NULL,
                     
-                    #' @sample_ids the data column used as label, the target
+                    #' @sample_ids to save the sample_ids
                     sample_ids = NULL,
                     
                     #' @train_sample_ids the sample IDs used in training data
@@ -341,12 +341,13 @@ Robencla <- R6Class("Robencla",
                         stop('Specify only ONE of data_frame or file_name.')
                       }
                       
+                      # reorder the rows
                       self$train_data <- thisdata[sample(nrow(thisdata)),]
+                      
                       # fix any spaces in the column names
                       colnames(self$train_data) <- gsub(" ", "_", colnames(self$train_data))
-                      # grab the original data column names
-                      self$data_colnames <- colnames(self$train_data)
                       
+                      # remove label from data
                       if (is.null(label_name)) {
                         stop("Make sure label_name is not null!")
                       } else {
@@ -359,6 +360,7 @@ Robencla <- R6Class("Robencla",
                         }
                       }
                       
+                      # remove sample ID column from data
                       if ((!is.null(sample_id)) && sample_id %in% self$data_colnames) {
                         self$sample_id <- gsub(' ', '_', sample_id)
                         self$train_sample_ids <- sapply(self$train_data[[self$sample_id]], as.character)
@@ -367,7 +369,7 @@ Robencla <- R6Class("Robencla",
                         self$train_sample_ids <- 1:nrow(self$train_data)
                       }
                       
-                      
+                      # remove any other data varaiables
                       if ((!is.null(drop_list)) && all(sapply(drop_list, function(a) a %in% self$data_colnames))) {
                         drop_list <- gsub(' ', '_', drop_list)
                         set(self$train_data, j = drop_list, value = NULL)
@@ -385,7 +387,10 @@ Robencla <- R6Class("Robencla",
                           self$train_data[,dvi] <- runif(n=nrow(self$train_data))
                         }
                       }
-
+                      
+                      # save the final data columns used
+                      self$data_colnames <- colnames(self$train_data)
+                      
                       # DATA ENGINEERING
                       self$data_eng('train')
                       # and record the unique categories in labels 
@@ -428,11 +433,7 @@ Robencla <- R6Class("Robencla",
                       # replace spaces with underscores
                       colnames(self$test_data) <- gsub(" ", "_", colnames(self$test_data))
 
-                      # check that the data column names are the same as used in training
-                      if (!all(colnames(self$test_data) %in% self$data_colnames)) {
-                        stop('Test data column names must match what was used in training.')
-                      } 
-                      
+                      ### have to remove class
                       if (is.null(label_name)) {
                         self$test_label <- NULL  # don't have to have labels to make calls.
                       } else {
@@ -444,7 +445,8 @@ Robencla <- R6Class("Robencla",
                           set(self$test_data, j = label_name, value = NULL)
                         }
                       }
-
+                      
+                      # remove column containing sample IDs
                       if ((!is.null(sample_id))) { # already know that the col names match
                         test_sample_id <- gsub(' ', '_', sample_id)
                         self$test_sample_ids <- sapply(self$test_data[[test_sample_id]], as.character)
@@ -453,6 +455,7 @@ Robencla <- R6Class("Robencla",
                         self$test_sample_ids <- 1:nrow(self$test_data)
                       }
                       
+                      # remove any other variables.
                       if ((!is.null(drop_list)) && all(sapply(drop_list, function(a) a %in% self$data_colnames))) {
                         drop_list <- gsub(' ', '_', drop_list)
                         set(self$test_data, j = drop_list, value = NULL)
@@ -470,8 +473,13 @@ Robencla <- R6Class("Robencla",
                           self$test_data[,dvi] <- runif(n=nrow(self$test_data))
                         }
                       }
-
-                        # DATA ENGINEERING
+                      
+                      # check that the data column names are the same as used in training
+                      if (!all(colnames(self$test_data) %in% self$data_colnames)) {
+                        stop('Test data column names must match what was used in training.')
+                      } 
+                      
+                      # DATA ENGINEERING
                       self$data_eng('test')
 
                       return(invisible(self))
