@@ -243,13 +243,16 @@ Robencla <- R6Class("Robencla",
                         thisdata <- data.table::fread(file=file_name, sep=sep, header=T)
                         
                       } else if (!is.null(data_frame) & is.null(file_name)) {
+                        colnames(data_frame) <- gsub("\\.","_",colnames(data_frame))
                         thisdata <- as.data.table(data_frame)
                       } else {
                         stop('Specify only ONE of data_frame or file_name.')
                       }
                       
+                      # reorder rows
                       self$data <- thisdata[sample(nrow(thisdata)),]
-                      self$data_colnames <- colnames(self$data)
+                      
+                      # replace spaces with underscores
                       colnames(self$data) <- gsub(" ", "_", colnames(self$data))
 
                       # make sure we have named label column in the parameters
@@ -336,6 +339,7 @@ Robencla <- R6Class("Robencla",
                         thisdata <- data.table::fread(file=file_name, sep=sep, header=T)
                         
                       } else if (!is.null(data_frame) & is.null(file_name)) {
+                        colnames(data_frame) <- gsub("\\.","_",colnames(data_frame))
                         thisdata <- as.data.table(data_frame)
                       } else {
                         stop('Specify only ONE of data_frame or file_name.')
@@ -425,6 +429,7 @@ Robencla <- R6Class("Robencla",
                       if (is.null(data_frame) & !is.null(file_name)) {
                         thisdata <- data.table::fread(file=file_name, sep=sep, header=T)
                       } else if (!is.null(data_frame) & is.null(file_name)) {
+                        colnames(data_frame) <- gsub("\\.","_",colnames(data_frame))
                         thisdata <- as.data.table(data_frame)
                       } else {
                         stop('Specify only ONE of data_frame or file_name.')
