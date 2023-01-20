@@ -914,7 +914,7 @@ Robencla <- R6Class("Robencla",
                     
                     # make predictions on a new data set
                     # after running autotrain()
-                    autotest = function(data_frame=data_frame,
+                    autotest = function(data_frame=NULL,
                                         data_file=NULL,
                                         sep=NULL,
                                         label_name=NULL,
