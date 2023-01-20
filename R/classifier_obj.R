@@ -224,7 +224,7 @@ Robencla <- R6Class("Robencla",
                       self$file_name <- file_name
                       self$data_mode <- data_mode
                       self$signatures <- signatures
-                      self$pair_list <- gsub(" ", "_", pair_list)
+                      self$pair_list <- pair_list
                       self$data_split <- data_split
                       
                       # bug file_name checked although null
@@ -318,8 +318,8 @@ Robencla <- R6Class("Robencla",
                       self$file_name <- file_name
                       self$data_mode <- data_mode
                       self$signatures <- signatures
-                      self$pair_list <- <- gsub(" ", "_", pair_list)
-                      
+                      self$pair_list <- pair_list
+                    
                       if (!is.null(file_name)) {
                         if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
                           sep = ','

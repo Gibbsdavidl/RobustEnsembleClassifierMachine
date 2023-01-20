@@ -121,6 +121,7 @@ Data_eng <- R6Class("Data_eng",
                         pair_list_format <- gsub(' ', '_', self$pair_list)
                         if (!all(pair_list_format %in% colnames(data))) {
                           print("ERROR: pair_list must be column names in data.")
+                          print(pair_list_format)
                           stop(paste0('pair_list contains invalid value'))
                         }
                         
