@@ -203,13 +203,15 @@ Robencla <- R6Class("Robencla",
                     
 
                     #' @description Does some setup processing on the data file, drop columns, split data into train and test, and identify the label column.
+                    #' @param dataframe data.frame, data.frame or data.table, if NULL, then use file_name.
                     #' @param file_name string, the name of the file
                     #' @param sep string, the separating character
                     #' @param data_mode string, 
                     #' @param label_name string, the column name indicating the target label
                     #' @param drop_list a vector of strings indicating what columns to drop
                     #' @param data_split numeric value, the percent of data to use in training 
-                    data_setup = function(file_name=NULL, 
+                    data_setup = function(data_frame=NULL,
+                                          file_name=NULL, 
                                           sep=NULL, 
                                           data_mode=NULL, 
                                           signatures=NULL, 
@@ -225,16 +227,24 @@ Robencla <- R6Class("Robencla",
                       self$pair_list <- pair_list
                       self$data_split <- data_split
                       
-                      if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
+                      if (is.null(dataframe) & is.null(sep) & stringr::str_detect(file_name, '.csv')) {
                         sep = ','
-                      } else if (is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
+                      } else if (is.null(dataframe) & is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
                         sep = '\t'
-                      } else if (is.null(sep)) {
+                      } else if (!is.null(file_name) & is.null(sep)) {
                         stop('Please specify the sep parameter... or use a .csv or .tsv file.')
                       }
                       
-                      # read in the data
-                      thisdata <- data.table::fread(file=file_name, sep=sep, header=T)
+                      # read in the data or convert to a data.table
+                      if (is.null(dataframe) & !is.null(file_name)) {
+                        thisdata <- data.table::fread(file=file_name, sep=sep, header=T)
+                        
+                      } else if (!is.null(dataframe) & is.null(file_name)) {
+                        thisdata <- as.data.table(dataframe)
+                      } else {
+                        stop('Specify only ONE of data_frame or file_name.')
+                      }
+                      
                       self$data <- thisdata[sample(nrow(thisdata)),]
                       self$data_colnames <- colnames(self$data)
                       colnames(self$data) <- gsub(" ", "_", colnames(self$data))
@@ -292,7 +302,8 @@ Robencla <- R6Class("Robencla",
                     #' @description Does some setup processing on the training data file, drop columns and identify the label column.
                     #' @param label_name string, the column name indicating the target label
                     #' @param drop_list a vector of strings indicating what columns to drop
-                    train_data_setup = function(file_name=NULL, 
+                    train_data_setup = function(data_frame=NULL,
+                                                file_name=NULL, 
                                                 sep=NULL, 
                                                 data_mode=NULL, 
                                                 signatures=NULL, 
@@ -311,15 +322,25 @@ Robencla <- R6Class("Robencla",
                       }
                       else if (is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
                         sep = '\t'
-                      } else if (is.null(sep)) {
+                      } else if (!is.null(file_name) & is.null(sep)) {
                         stop('Please specify the sep parameter... or use a .csv or .tsv file.')
                       }
                       
-                      self$train_data <- data.table::fread(file=file_name, sep=sep, header=T)
-                      # grab the original data column names
-                      self$data_colnames <- colnames(self$train_data)
+                      # read in the data or convert to a data.table
+                      if (is.null(dataframe) & !is.null(file_name)) {
+                        thisdata <- data.table::fread(file=file_name, sep=sep, header=T)
+                        
+                      } else if (!is.null(dataframe) & is.null(file_name)) {
+                        thisdata <- as.data.table(dataframe)
+                      } else {
+                        stop('Specify only ONE of data_frame or file_name.')
+                      }
+                      
+                      self$train_data <- thisdata[sample(nrow(thisdata)),]
                       # fix any spaces in the column names
                       colnames(self$train_data) <- gsub(" ", "_", colnames(self$train_data))
+                      # grab the original data column names
+                      self$data_colnames <- colnames(self$train_data)
                       
                       if (is.null(label_name)) {
                         stop("Make sure label_name is not null!")
@@ -372,7 +393,8 @@ Robencla <- R6Class("Robencla",
                     #' The data_mode and signatures will have already been set in training.
                     #' @param label_name string, the column name indicating the target label
                     #' @param drop_list a vector of strings indicating what columns to drop
-                    test_data_setup = function(file_name=NULL, 
+                    test_data_setup = function(data_frame=NULL,
+                                               file_name=NULL, 
                                                sep=NULL, 
                                                label_name=NULL, 
                                                sample_id=NULL, 
@@ -384,18 +406,27 @@ Robencla <- R6Class("Robencla",
                       }
                       else if (is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
                         sep = '\t'
-                      } else if (is.null(sep)) {
+                      } else if (!is.null(file_name) & is.null(sep)) {
                         stop('Please specify the sep parameter... or use a .csv or .tsv file.')
                       }
                       
-                      self$test_data <- data.table::fread(file=file_name, sep=sep, header=T)
+                      # read in the data or convert to a data.table
+                      if (is.null(dataframe) & !is.null(file_name)) {
+                        thisdata <- data.table::fread(file=file_name, sep=sep, header=T)
+                      } else if (!is.null(dataframe) & is.null(file_name)) {
+                        thisdata <- as.data.table(dataframe)
+                      } else {
+                        stop('Specify only ONE of data_frame or file_name.')
+                      }
+                      
+                      self$test_data <- thisdata[sample(nrow(thisdata)),]
+                      # replace spaces with underscores
+                      colnames(self$test_data) <- gsub(" ", "_", colnames(self$test_data))
 
                       # check that the data column names are the same as used in training
                       if (!all(colnames(self$test_data) %in% self$data_colnames)) {
                         stop('Test data column names must match what was used in training.')
-                      } else {
-                        colnames(self$test_data) <- gsub(" ", "_", colnames(self$test_data))
-                      }
+                      } 
                       
                       if (is.null(label_name)) {
                         self$test_label <- NULL  # don't have to have labels to make calls.
@@ -750,7 +781,8 @@ Robencla <- R6Class("Robencla",
                     
                     
                     # Run CV or specify a split
-                    autocv = function(data_file=NULL,
+                    autocv = function(  data_frame=NULL,
+                                        data_file=NULL,
                                         sep=NULL,
                                         label_name=NULL,
                                         sample_id=NULL,
@@ -775,7 +807,8 @@ Robencla <- R6Class("Robencla",
                       self$combine_function=combine_function
                       
                       # perform the data set up
-                      self$data_setup(file_name=data_file,
+                      self$data_setup( data_frame=data_frame,
+                                     file_name=data_file,
                                      sep=sep,
                                      data_mode=data_mode,
                                      signatures=signatures,
@@ -828,7 +861,8 @@ Robencla <- R6Class("Robencla",
                     },# end autopred
                     
                     # Train a classifier
-                    autotrain = function(data_file=NULL,
+                    autotrain = function(data_frame=NULL,
+                                        data_file=NULL,
                                         sep=NULL,
                                         label_name=NULL,
                                         sample_id=NULL,
@@ -851,7 +885,7 @@ Robencla <- R6Class("Robencla",
                       self$combine_function=combine_function
                     
                       # perform the data set up
-                      self$train_data_setup(
+                      self$train_data_setup( data_frame=data_frame,
                                       file_name=data_file,
                                       sep=sep,
                                       data_mode=data_mode,
@@ -880,13 +914,15 @@ Robencla <- R6Class("Robencla",
                     
                     # make predictions on a new data set
                     # after running autotrain()
-                    autotest = function(data_file=NULL,
+                    autotest = function(data_frame=data_frame,
+                                        data_file=NULL,
                                         sep=NULL,
                                         label_name=NULL,
                                         sample_id=NULL,
                                         drop_list=NULL) {
                     
-                      self$test_data_setup(file_name=data_file, 
+                      self$test_data_setup( data_frame=data_frame,
+                                      file_name=data_file, 
                                       sep=sep, 
                                       label_name=label_name, 
                                       sample_id=sample_id, 
