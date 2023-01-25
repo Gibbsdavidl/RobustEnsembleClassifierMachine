@@ -504,22 +504,14 @@ Robencla <- R6Class("Robencla",
                     
                     #' @description 
                     #' Builds list of ensembles of XGBoost object, each classifying one binary label.
-                    #' @param mode character vector, what types of data modalities to make. possible: pairs, quartiles, set-pairs
-                    #' @param size numeric, number of classifiers
-                    #' @param label string, the label vector of each data example
-                    #' @param max_depth numeric, the depth of the tree in XGBoost
-                    #' @param eta numeric, the eta param of XGBoost, speed of learning
-                    #' @param nrounds numeric, the number of training rounds
-                    #' @param nthreads numeric, the number of threads to use in processing
-                    #' @param objective string, binary:logistic, see xgboost docs
+                    #' @param params list, The main set of parameters.
                     #'
                     #' @details A list of classifiers, each trained on a random sample of the training data.
                     #'
                     #' @return A ensemble object is added to the list of objects in recm$enbl.
                     #'
                     #'
-                    build_label_ensemble = function(size,
-                                                    params) {
+                    build_label_ensemble = function(params) {
                       
                       # for each category
                       for (li in self$unique_labels) {
@@ -529,11 +521,11 @@ Robencla <- R6Class("Robencla",
                         # then create the classifier object
 
                         self$ensbl[[li]] <- Ensemble$new(name=li, 
-                                                      obj_mode='ensemble',
-                                                      size=size, 
-                                                      data=self$train_data,
-                                                      label=bin_label, 
-                                                      params=params)
+                                                         obj_mode='ensemble',
+                                                         size=params$size, 
+                                                         data=self$train_data,
+                                                         label=bin_label, 
+                                                         params=params)
                         
                       }
                       return(invisible(self))
@@ -576,9 +568,7 @@ Robencla <- R6Class("Robencla",
                     
                     
                     
-                    build_final_ensemble = function(
-                                                size, 
-                                                params) {
+                    build_final_ensemble = function(params) {
                       # here the ensemble will be trained on the prior predictions
                       # for each category, get the predictions
                       # turn that into a dataframe / matrix
@@ -590,7 +580,7 @@ Robencla <- R6Class("Robencla",
 
                       self$ensbl[["final"]] <- Ensemble$new(name="final",
                                                          obj_mode="final",
-                                                         size=size, 
+                                                         size=params$size, 
                                                          data=self$pred_table,
                                                          label=remapped_label, 
                                                          params=params
@@ -811,9 +801,7 @@ Robencla <- R6Class("Robencla",
                                         data_mode=NULL,
                                         signatures=NULL,
                                         pair_list=NULL,
-                                        size=NULL,
                                         params=NULL,
-                                        train_perc=NULL,
                                         combine_function=NULL
                                       ) {
                       
@@ -845,25 +833,23 @@ Robencla <- R6Class("Robencla",
                         self$data_split_fun(data_split, cv_rounds, cvi)
                         
                         # build the initial set of predictors
-                        self$build_label_ensemble(size=size, 
-                                                  params=params)
+                        self$build_label_ensemble(params=params)
                         
                         # and train them using a random selection of data
-                        self$train_models(train_perc)
+                        self$train_models(params$train_perc)
                         
                         # then make a prediction on the training data
                         self$ensemble_predict(self$train_data, 
-                                              combine_function = combine_function)
+                                              combine_function = params$combine_function)
                         
                         # build the output predictor
-                        self$build_final_ensemble(size=size, 
-                                                  final_params)
+                        self$build_final_ensemble(final_params)
                         
                         # and use the earlier training predictions to train the output                      
-                        self$train_final(train_perc)
+                        self$train_final(params$train_perc)
                         
                         # and finally, make a prediction on some training data.
-                        self$predict(self$test_data, combine_function)
+                        self$predict(self$test_data, params$combine_function)
                         
                         # capture the feature importance from each fold
                         self$cv_importance[[cvi]] <- self$importance()
@@ -879,6 +865,7 @@ Robencla <- R6Class("Robencla",
                     
                     },# end autopred
                     
+                    
                     # Train a classifier
                     autotrain = function(data_frame=NULL,
                                         data_file=NULL,
@@ -889,10 +876,7 @@ Robencla <- R6Class("Robencla",
                                         data_mode=NULL,
                                         signatures=NULL,
                                         pair_list=NULL,
-                                        size=NULL,
-                                        params=NULL,
-                                        train_perc=NULL,
-                                        combine_function=NULL
+                                        params=NULL
                     ) {
                       
                       params[['objective']] <- "binary:logistic"
@@ -901,31 +885,30 @@ Robencla <- R6Class("Robencla",
                       final_params[['objective']] <- 'multi:softmax'
                       final_params[['eval_metric']] <- 'mlogloss'
                       
-                      self$combine_function=combine_function
+                      self$combine_function=params$combine_function
                     
                       # perform the data set up
-                      self$train_data_setup( data_frame=data_frame,
-                                      file_name=data_file,
-                                      sep=sep,
-                                      data_mode=data_mode,
-                                      signatures=signatures,
-                                      pair_list=pair_list,
-                                      label_name=label_name, 
-                                      sample_id=sample_id,
-                                      drop_list=drop_list)
+                      self$train_data_setup(data_frame=data_frame,
+                                            file_name=data_file,
+                                            sep=sep,
+                                            data_mode=data_mode,
+                                            signatures=signatures,
+                                            pair_list=pair_list,
+                                            label_name=label_name, 
+                                            sample_id=sample_id,
+                                            drop_list=drop_list)
                       
                       # building the first layer of predictors, each a binary prediction
                       # on one factor in the target labels.
                       # training and making predictions on the training data
-                      self$build_label_ensemble(size=size, 
-                                                params=params)$
-                        train_models(train_perc)$
-                        ensemble_predict(self$train_data, combine_function)
+                      self$build_label_ensemble(params=params)$
+                        train_models(params$train_perc)$
+                        ensemble_predict(self$train_data, params$combine_function)
 
                       
                       # then we build the output layer, trained on the predictions of the first layer
-                      self$build_final_ensemble(size=size, final_params)$
-                        train_final(train_perc)
+                      self$build_final_ensemble(final_params)$
+                        train_final(params$train_perc)
                       
                       return(invisible(self))
                     }, # end autotrain
@@ -947,7 +930,7 @@ Robencla <- R6Class("Robencla",
                                       sample_id=sample_id, 
                                       drop_list=drop_list)
                       
-                      self$predict(self$test_data, self$combine_function)
+                      self$predict(self$test_data, self$final_params$combine_function)
                   
                       return(invisible(self)) 
                     }

@@ -28,6 +28,7 @@ Ensemble <- R6Class("Ensemble",
                   preds = NULL,    # predictions made, as list
                   pred_table = NULL,  # table of predictions
                   pred_combined = NULL, # combined predictions
+                  combine_function = NULL, # the function used to combine scores
                   
                   initialize = function(name,
                                         obj_mode,
@@ -40,6 +41,7 @@ Ensemble <- R6Class("Ensemble",
                     self$size <- size
                     self$data <- data 
                     self$label <- label 
+                    self$combine_function <- params[['combine_function']]
                     self$nrounds <- params[['nrounds']]
                     self$nthreads <- params[['nthreads']]
                     self$verbose <- params[['verbose']]
@@ -48,6 +50,9 @@ Ensemble <- R6Class("Ensemble",
                     self$params[['nrounds']] <- NULL
                     self$params[['nthreads']] <- NULL
                     self$params[['verbose']] <- NULL
+                    self$params[['size']] <- NULL
+                    self$params[['train_perc']] <- NULL
+                    self$params[['combine_function']] <- NULL
                   },
                   
                   
@@ -169,7 +174,7 @@ Ensemble <- R6Class("Ensemble",
                       self$pred_combined <- self$final_ensemble_combine(final_combine_function)
                     } else {
                       # then we combine all the predictions by applying the combine_function
-                      self$pred_combined <- self$ensemble_combine(combine_function)
+                      self$pred_combined <- self$ensemble_combine(self$combine_function)
                     }
                     
                   },

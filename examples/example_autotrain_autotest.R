@@ -20,7 +20,11 @@ params <- list(max_depth=6,
                eta=0.2,
                nrounds=12,
                nthreads=4,
-               verbose=0)
+               verbose=0,
+               size=11,
+               train_perc=0.3,
+               combine_function='median'
+               )
 
 # split the data, train and test
 anne$autotrain(data_file='data/bcp_train_data.csv',
@@ -29,10 +33,7 @@ anne$autotrain(data_file='data/bcp_train_data.csv',
               data_mode=c('pairs', 'sigpairs'), # pairs,sigpairs,quartiles,tertiles,binary,ranks,original
               pair_list=my_pairs,
               signatures=sigs,
-              size=11,
-              params=params,
-              train_perc=0.3,
-              combine_function='median')
+              params=params)
 
 
 anne$autotest(data_file='data/bcp_test_data.csv',

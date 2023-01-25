@@ -1,74 +1,85 @@
+library(devtools)
 
+tmp_lib <- "E:/Work/Code/tmp_lib"
+dir.create(tmp_lib)
 
-### Test example 1
+devtools::install_local("E:/Work/Code/robencla/", lib = tmp_lib)
 
-### Building, training, and making predictions with 
-### the recm object.
+## restart R
 
-### Here, the code is used step by step.  The workflow
-### will be bundled into a single call and demonstrated 
-### in test2.R
+## explicitly load the affected packages from the temporary library
+options(error = function() traceback(3))
+tmp_lib <- "E:/Work/Code/tmp_lib"
+library(robencla, lib.loc = tmp_lib)
+
+########### OR START FROM GITHUB ############
+
+#devtools::install_github("gibbsdavidl/robencla")
 
 library(robencla)
 
-# The object's name is Ann, OK?
+# Our classifier object named Anne.  Hi Anne!
 anne <- Robencla$new("Anne")
 
-# first we read in some data, which is processed into robust features
-# https://www.kaggle.com/merishnasuwal/breast-cancer-prediction-dataset #
-anne$train_data_setup(
-  file_name = 'data/bcp_train_data.csv', 
-  data_mode=c('pairs'),  #'quartiles', 'original', 'ranks', 'pairs', 'sigpairs'
+# Defining the list of signatures to compute signature-pairs, must be composed of column names
+sigs = list(Sig1=c('Uniformity of Cell Shape','Uniformity of Cell Size', 'Marginal Adhesion'), 
+            Sig2=c('Bare Nuclei', 'Normal Nucleoli', 'Single Epithelial Cell Size'),
+            Sig3=c('Bland Chromatin', 'Mitoses'))
+
+# Now, create a list of features, and pairs will only be created from that list.
+pair_list <- c('Uniformity of Cell Shape','Uniformity of Cell Size', 'Marginal Adhesion')
+
+# XGBoost parameters to pass to each sub-classifier in the ensembles
+params <- list(
+  max_depth=6,    # "height" of the tree, 6 is actually default. I think about 12 seems better.  (xgboost parameter)
+  eta=0.2,        # this is the learning rate. smaller values slow it down, more conservative   (xgboost parameter)
+  nrounds=24,     # number of rounds of training, lower numbers less overfitting (potentially)  (xgboost parameter)
+  nthreads=4,     # parallel threads
+  gamma=1,        # Minimum loss reduction required to again partition a leaf node. higher number ~ more conservative (xgboost parameter)
+  lambda=1.5,     # L2 regularization term on weights, higher number ~ more conservative (xgboost parameter)
+  alpha=0.5,      # L1 regularization term on weights. higher number ~ more conservative (xgboost parameter)
+  size=11,        # size of the ensemble
+  train_perc=0.5, # percent of data to sample for each member of the ensemble
+  combine_function='median', # how to combine the ensemble
+  verbose=0)
+###More on the xgboost parameters: https://xgboost.readthedocs.io/en/latest/parameter.html
+
+# First we use the training data
+anne$autotrain(data_frame=data.table::fread('data/bcp_train_data.csv', sep=',', header=T),
+               # !!! OR !!! leave data_frame=NULL, and pass in a file name for the data to use for training
+               # data_file='data/bcp_train_data.csv', # subset of data/Breast Cancer Prediction.csv',
+               label_name='Class',
+               sample_id = 'Sample code number',
+               data_mode=c('sigpairs','pairs'), # pairs,sigpairs,quartiles,tertiles,binarize,ranks,original #
+               signatures=sigs,
+               pair_list=pair_list,  # subset to these genes.
+               params=params)
+
+# now we apply the classifier to a test set.
+anne$autotest(
+  data_frame=data.table::fread('data/bcp_test_data.csv', sep=',', header=T),
+  ### OR ### data_file = 'data/bcp_test_data.csv',
   label_name='Class',
-  sample_id='Sample code number'
-)
+  sample_id = 'Sample code number')
 
-# then we select our xgboost params
-params <- list(max_depth=6,
-               eta=0.1,
-               nrounds=5,
-               nthreads=4,
-               verbose=0)
 
-# building the first layer of predictors, each a binary prediction
-# on one factor in the target labels.
-# training and making predictions on the training data
-anne$build_label_ensemble(size=5, params=params)$
-    train_models(0.8)$
-    ensemble_predict(anne$train_data, 'median')
+df <- anne$results(include_label = T)
 
-# setting some final layer xgboost params
-final_params <- params
-final_params[['objective']] <- 'multi:softmax'
-final_params[['eval_metric']] <- 'mlogloss'
-
-# then we build the output layer, trained on the predictions of the first layer
-anne$build_final_ensemble(size=5, final_params)$train_final(0.8)
-
-# NOW we'll read in the test data
-# https://www.kaggle.com/merishnasuwal/breast-cancer-prediction-dataset #
-anne$test_data_setup(
-   file_name='data/bcp_test_data.csv', 
-   label_name='Class', 
-   sample_id='Sample code number'
-   # and make predictions on the test data
-)$predict(anne$test_data, 'median')
-
-# return the results
-res0 <- anne$results(include_label = TRUE)
-print(head(res0))
-
-# confusion matrix
-print(table(res0$BestCalls, res0$Label))
-
-# and check out how we did.
-# metrics on the test set predictions
+# create a confusion matrix
 print(
-  anne$classification_metrics(use_cv_results=FALSE) # No CV results
+  table(Label=df$Label, Pred=df$BestCalls)
 )
-# and get the importance of features in each ensemble member
-print(anne$importance())
 
-# plot the ROC curves for each class
-## IF THE ROC IS UPSIDE DOWN, SET FLIP=T
-ensemble_rocs(anne, flip=F) # uses the last fold trained.
+# Prediction metrics on the test set predictions
+print(
+  anne$classification_metrics(use_cv_results = F) # does not use CV results
+)
+
+# Get the importance of features in each ensemble member
+# these are found by combining the importance measures across the ensemble
+print(
+  anne$importance()
+)
+
+# Plot the ROC curves for each class
+ensemble_rocs(anne, flip=F)  ### Flip it if the binary labels are "upside down".

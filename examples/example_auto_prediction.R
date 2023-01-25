@@ -19,10 +19,13 @@ params <- list(max_depth=6,
                eta=0.2,
                nrounds=12,
                nthreads=4,
+               size=11,
+               train_perc=0.3,
+               combine_function='median',
                verbose=0)
 
 # split the data, train and test
-anne$autopred(data_file='data/Breast Cancer Prediction.csv',
+anne$autocv(data_file='data/Breast Cancer Prediction.csv',
              label_name='Class',
              sample_id = 'Sample code number',
              cv_rounds=3,
@@ -30,10 +33,7 @@ anne$autopred(data_file='data/Breast Cancer Prediction.csv',
              data_mode=c('pairs', 'sigpairs'), # pairs,sigpairs,quartiles,tertiles,binary,ranks,original
              pair_list=my_pairs,
              signatures=sigs,
-             size=11,
-             params=params,
-             train_perc=0.3,
-             combine_function='median')
+             params=params)
 
 # print the test data results table
 print(
