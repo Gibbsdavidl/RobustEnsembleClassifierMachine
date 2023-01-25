@@ -33,6 +33,9 @@ params <- list(
                gamma=1,        # Minimum loss reduction required to again partition a leaf node. higher number ~ more conservative (xgboost parameter)
                lambda=1.5,     # L2 regularization term on weights, higher number ~ more conservative (xgboost parameter)
                alpha=0.5,      # L1 regularization term on weights. higher number ~ more conservative (xgboost parameter)
+               size=11,        # Size of the ensemble, per binary prediction 
+               train_perc=0.5, # The percentage of data used to train each ensemble member.
+               combine_function='median'  # How the ensemble should be combined. Only median currently.
                verbose=0)
                ###More on the xgboost parameters: https://xgboost.readthedocs.io/en/latest/parameter.html
 
@@ -64,17 +67,8 @@ anne$autocv(
   # Use only these features for the pairs
   pair_list=pair_list,
   
-  # Size of the ensemble, per binary prediction 
-  size=11,
-  
-  # The XGBoost parameters
-  params=params,
-  
-  # The percentage of data used to train each ensemble member.
-  train_perc=0.5,
-  
-  # How the ensemble should be combined. Only median currently.
-  combine_function='median'
+  # The XGBoost parameters (and a few extra params)
+  params=params
   )
 
 
@@ -132,6 +126,9 @@ params <- list(
                gamma=1,        # Minimum loss reduction required to again partition a leaf node. higher number ~ more conservative (xgboost parameter)
                lambda=1.5,     # L2 regularization term on weights, higher number ~ more conservative (xgboost parameter)
                alpha=0.5,      # L1 regularization term on weights. higher number ~ more conservative (xgboost parameter)
+               size=11,        # Size of the ensemble, per binary prediction 
+               train_perc=0.5, # The percentage of data used to train each ensemble member.
+               combine_function='median'  # How the ensemble should be combined. Only median currently.
                verbose=0)
                ###More on the xgboost parameters: https://xgboost.readthedocs.io/en/latest/parameter.html
 
@@ -144,10 +141,7 @@ anne$autotrain(data_frame=data.table::fread('data/bcp_train_data.csv', sep=',', 
                data_mode=c('sigpairs','pairs'), # pairs,sigpairs,quartiles,tertiles,binarize,ranks,original #
                signatures=sigs,
                pair_list=pair_list,  # subset to these genes.
-               size=11,
-               params=params,
-               train_perc=0.5,
-               combine_function='median')
+               params=params)
               
 # now we apply the classifier to a test set.
 anne$autotest(
