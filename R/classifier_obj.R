@@ -322,7 +322,10 @@ Robencla <- R6Class("Robencla",
                       self$data_mode <- data_mode
                       self$signatures <- signatures
                       self$pair_list <- pair_list
-                    
+                      self$sample_id <- sample_id
+                      self$label_name <- label_name
+                      
+                      # assume the file format
                       if (!is.null(file_name)) {
                         if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
                           sep = ','
@@ -345,7 +348,7 @@ Robencla <- R6Class("Robencla",
                         stop('Specify only ONE of data_frame or file_name.')
                       }
                       
-                      # reorder the rows
+                      # reorder the rows randomly
                       self$train_data <- thisdata[sample(nrow(thisdata)),]
                       
                       # fix any spaces in the column names
@@ -373,7 +376,7 @@ Robencla <- R6Class("Robencla",
                         self$train_sample_ids <- 1:nrow(self$train_data)
                       }
                       
-                      # remove any other data varaiables
+                      # remove any other data variables
                       if ((!is.null(drop_list)) && all(sapply(drop_list, function(a) a %in% self$data_colnames))) {
                         drop_list <- gsub(' ', '_', drop_list)
                         set(self$train_data, j = drop_list, value = NULL)
@@ -468,6 +471,14 @@ Robencla <- R6Class("Robencla",
                       } else if ((!is.null(drop_list))) {
                         stop('Make sure the drop_list contains column names found in the data!')
                       }
+                      
+                      # check that the data column names are the same as used in training
+                      if (!all(colnames(self$test_data) %in% self$data_colnames)) {
+                        stop('Test data column names must match what was used in training.')
+                      } else {
+                        # just subset to the proper columns now
+                        self$test_data
+                      }
 
                       # if we have some columns that have zero variance, fix that
                       data_var <- self$test_data[, lapply(.SD, var, na.rm=TRUE)]
@@ -479,11 +490,6 @@ Robencla <- R6Class("Robencla",
                           self$test_data[,dvi] <- runif(n=nrow(self$test_data))
                         }
                       }
-                      
-                      # check that the data column names are the same as used in training
-                      if (!all(colnames(self$test_data) %in% self$data_colnames)) {
-                        stop('Test data column names must match what was used in training.')
-                      } 
                       
                       # DATA ENGINEERING
                       self$data_eng('test')
@@ -674,25 +680,35 @@ Robencla <- R6Class("Robencla",
                     
                     classification_metrics = function(use_cv_results=TRUE) {
                       
-                      if (use_cv_results) {
-                        calls <- self$cv_results$BestCalls
-                        labels <- self$cv_results$Label
-                        
-                      } else {
-                        if (is.null(self$test_label)) {
-                          return("No test labels.")
-                        } else {
-                          # first make sure our labels are mapped to integers correctly
-                          labels <- self$test_label
-                          
-                          # get the calls
-                          mapped_calls <- self$ensbl[['final']]$pred_combined
-                          calls <- self$unmap_multiclass_labels(mapped_calls)
+                        # there are instances where some classes are not returned
+                        # in the BestCalls, those can cause numeric(0) in sens, spec, etc.
+                        isEmpty <- function(x) {
+                          return(identical(x, numeric(0)))
                         }
-                      }
-                        
+                        fixMissing <- function(x) {
+                          sapply(x, function(a) if(isEmpty(a)){0}else{a})
+                        }
+                      
+                        if (use_cv_results) {
+                          calls <- self$cv_results$BestCalls
+                          labels <- self$cv_results$Label
+                          
+                        } else {
+                          if (is.null(self$test_label)) {
+                            return("No test labels.")
+                          } else {
+                            # first make sure our labels are mapped to integers correctly
+                            labels <- self$test_label
+                            
+                            # get the calls
+                            mapped_calls <- self$ensbl[['final']]$pred_combined
+                            calls <- self$unmap_multiclass_labels(mapped_calls)
+                          }
+                        }
+                          
                         # then build the multi-class confusion matrix
                         confusion_matrix <- table( labels, calls )
+                        
                         
                         # labels of the confusion matrix
                         cm_labels <- rownames(confusion_matrix)
@@ -704,17 +720,17 @@ Robencla <- R6Class("Robencla",
                         acc <- self$accuracy(labels, calls)
                         
                         # first compute precision
-                        prec <- sapply(cm_labels, function(a) self$precision(cmdf, a))
+                        prec <- fixMissing(sapply(cm_labels, function(a) self$precision(cmdf, a)))
                         
                         # then specificity
-                        spec <- sapply(cm_labels, function(a) self$specificity(cmdf, a))
+                        spec <- fixMissing(sapply(cm_labels, function(a) self$specificity(cmdf, a)))
                         
                         # then sensitivity or recall
-                        sens <- sapply(cm_labels, function(a) self$sensitivity(cmdf, a))
+                        sens <- fixMissing(sapply(cm_labels, function(a) self$sensitivity(cmdf, a)))
                         
                         # then F1
                         if (is.numeric(sens) & is.numeric(prec)) {
-                          f1 <-(2*sens*prec) / (sens+prec)
+                          f1 <-(2*sens*prec) / (sens+prec+0.0000000001)
                         } else {
                           f1 <- 0
                         }
