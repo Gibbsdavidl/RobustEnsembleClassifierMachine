@@ -117,6 +117,35 @@ Data_eng <- R6Class("Data_eng",
                     
                     if ('pairs' %in% self$data_mode) {
                       # if mode includes 'pairs' then we need to make var-pairs
+                      if (is.null(self$pair_list)) {
+                        stop('Error: pairlist not found.')
+                      }
+                      pair_list_format <- gsub(' ', '_', self$pair_list)
+                      if (!all(pair_list_format %in% colnames(data))) {
+                        print("ERROR: pair_list must be column names in data.")
+                        print(pair_list_format)
+                        stop(paste0('pair_list contains invalid value'))
+                      }
+                      if (length(self$pair_list %% 2 != 0)) {
+                        print("Pair list must have an even length.")
+                        stop('pair_list has invalid format or length.')
+                      }
+                      newcol_names <- c()
+                      newcol_dat <- list()
+                      cols <- self$pair_list #colnames(data)
+                      for (ci in seq.int(from=1,to=length(self$pair_list),by=2)) {
+                          cj <- ci+1
+                          res0 <- as.numeric(data[,.SD,.SDcols=cols[ci]] > data[,.SD,.SDcols=cols[cj]])
+                          this_new_col <- paste0(cols[ci],'_X_', cols[cj])
+                          newcol_names <- c(newcol_names, this_new_col)
+                          newcol_dat[[this_new_col]] <- res0
+                      }
+                      pairdat <- data.table(data.frame(newcol_dat))
+                      newdat <- cbind(newdat, pairdat)
+                    }
+
+                    if ('allpairs' %in% self$data_mode) {
+                      # if mode includes 'pairs' then we need to make var-pairs
                       if (!is.null(self$pair_list)) {
                         pair_list_format <- gsub(' ', '_', self$pair_list)
                         if (!all(pair_list_format %in% colnames(data))) {
@@ -139,8 +168,8 @@ Data_eng <- R6Class("Data_eng",
                           newcol_dat[[this_new_col]] <- res0
                         }
                       }
-                      pairdat <- data.table(data.frame(newcol_dat))
-                      newdat <- cbind(newdat, pairdat)
+                      allpairdat <- data.table(data.frame(newcol_dat))
+                      newdat <- cbind(newdat, allpairdat)
                     }
                     
                     if ('sigpairs' %in% self$data_mode) {
