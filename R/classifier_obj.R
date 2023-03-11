@@ -33,6 +33,9 @@ Robencla <- R6Class("Robencla",
                     #' @field the data column used as label, the target
                     label = NULL,
                     
+                    #' @field the column name containing the label in the training data
+                    label_name = NULL,
+                    
                     #' @sample_id the data column used to identify samples
                     sample_id = NULL,
                     
@@ -226,6 +229,7 @@ Robencla <- R6Class("Robencla",
                       self$signatures <- signatures
                       self$pair_list <- pair_list
                       self$data_split <- data_split
+                      self$label_name <- label_name
                       
                       # bug file_name checked although null
                       if (!is.null(file_name)) {
@@ -241,7 +245,6 @@ Robencla <- R6Class("Robencla",
                       # read in the data or convert to a data.table
                       if (is.null(data_frame) & !is.null(file_name)) {
                         thisdata <- data.table::fread(file=file_name, sep=sep, header=T)
-                        
                       } else if (!is.null(data_frame) & is.null(file_name)) {
                         colnames(data_frame) <- gsub("\\.","_",colnames(data_frame))
                         thisdata <- as.data.table(data_frame)
@@ -264,7 +267,7 @@ Robencla <- R6Class("Robencla",
                       }
 
                       # make sure we have a sample ID column
-                      if ((!is.null(sample_id)) && sample_id %in% self$data_colnames) {
+                      if ((!is.null(sample_id)) && sample_id %in% colnames(self$data)) {
                         self$sample_id <- gsub(' ', '_', sample_id)
                         self$sample_ids <- sapply(self$data[[self$sample_id]], as.character)
                         set(self$data, j = self$sample_id, value = NULL)  # then del it
@@ -323,6 +326,7 @@ Robencla <- R6Class("Robencla",
                       self$signatures <- signatures
                       self$pair_list <- pair_list
                       self$sample_id <- sample_id
+                      self$label_name <- label_name
                       
                       # assume the file format
                       if (!is.null(file_name)) {
@@ -339,7 +343,6 @@ Robencla <- R6Class("Robencla",
                       # read in the data or convert to a data.table
                       if (is.null(data_frame) & !is.null(file_name)) {
                         thisdata <- data.table::fread(file=file_name, sep=sep, header=T)
-                        
                       } else if (!is.null(data_frame) & is.null(file_name)) {
                         colnames(data_frame) <- gsub("\\.","_",colnames(data_frame))
                         thisdata <- as.data.table(data_frame)
@@ -367,7 +370,7 @@ Robencla <- R6Class("Robencla",
                       }
                       
                       # remove sample ID column from data
-                      if ((!is.null(sample_id)) && sample_id %in% self$data_colnames) {
+                      if ((!is.null(sample_id)) && sample_id %in% colnames(self$train_data)) {
                         self$sample_id <- gsub(' ', '_', sample_id)
                         self$train_sample_ids <- sapply(self$train_data[[self$sample_id]], as.character)
                         set(self$train_data, j = self$sample_id, value = NULL)  # then del it
@@ -376,7 +379,7 @@ Robencla <- R6Class("Robencla",
                       }
                       
                       # remove any other data variables
-                      if ((!is.null(drop_list)) && all(sapply(drop_list, function(a) a %in% self$data_colnames))) {
+                      if ((!is.null(drop_list)) && all(sapply(drop_list, function(a) a %in%  colnames(self$train_data)))) {
                         drop_list <- gsub(' ', '_', drop_list)
                         set(self$train_data, j = drop_list, value = NULL)
                       } else if ((!is.null(drop_list))) {
@@ -464,11 +467,15 @@ Robencla <- R6Class("Robencla",
                       }
                       
                       # remove any other variables.
-                      if ((!is.null(drop_list)) && all(sapply(drop_list, function(a) a %in% self$data_colnames))) {
+                      if ((!is.null(drop_list)) && all(sapply(drop_list, function(a) a %in% colnames(self$test_data)))) {
                         drop_list <- gsub(' ', '_', drop_list)
                         set(self$test_data, j = drop_list, value = NULL)
                       } else if ((!is.null(drop_list))) {
                         stop('Make sure the drop_list contains column names found in the data!')
+                      }
+                      
+                      if ( (self$label_name %in% colnames(self$test_data)) ) {
+                        set(self$test_data, j = self$label_name, value = NULL)
                       }
                       
                       # check that the data column names are the same as used in training
