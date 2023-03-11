@@ -59,16 +59,16 @@ Data_eng <- R6Class("Data_eng",
                   #' @description Create a new `Recm` object.
                   #' @param name The object is named.
                   #' @return A new `recm` object.
-                  initialize = function(data_mode = NULL,
+                  initialize = function(data_mode  = NULL,
                                         signatures = NULL,
-                                        pair_list = NULL) {
+                                        pair_list  = NULL) {
                     self$data_mode <- data_mode
                     self$signatures <- signatures
                     self$pair_list <- pair_list
                     
-                    if (!all(data_mode %in% c('pairs','sigpairs','quartiles','tertiles','binary','ranks','original'))) {
+                    if (!all(data_mode %in% c('pairs','allpairs','sigpairs','quartiles','tertiles','binary','ranks','original'))) {
                       print("ERROR:  please choose a valid collection of data modes: ")
-                      print('pairs,sigpairs,quartiles,tertiles,binary,ranks,original')
+                      print('pairs,allpairs,sigpairs,quartiles,tertiles,binary,ranks,original')
                       stop(paste0('data_mode, ', self$data_mode  ,' wrong value'))
                     }
                     
@@ -82,36 +82,41 @@ Data_eng <- R6Class("Data_eng",
                     rankdat <- NULL
                     pairdat <- NULL
                     newdat <- data.table()
+                    allgenes <- c(self$pair_list, unlist(self$signatures))
                     
                     if ('original' %in% self$data_mode) {
                       newdat <- cbind(newdat, data)
                     }
                     
+                    if (length(allgenes) == 0) {
+                      stop('No provided feature names in pairs or sigpairs.')
+                    }
+                    
                     if ('binary' %in% self$data_mode) {
-                      cols <- colnames(data)
                       bindat <- as.data.table(t(apply(data,1,data_bin_2)))
-                      colnames(bindat) <- sapply(cols, function(a) paste0(a,'_binary',collapse = ''))
+                      bindat <- bindat[,allgenes]
+                      colnames(bindat) <- sapply(colnames(bindat), function(a) paste0(a,'_binary',collapse = ''))
                       newdat <- cbind(newdat, bindat)
                     } 
                     
                     if ('tertiles' %in% self$data_mode) {
-                      cols <- colnames(data)
                       tertdat <- as.data.table(t(apply(data,1,data_bin_3)))
-                      colnames(tertdat) <- sapply(cols, function(a) paste0(a,'_tertiles',collapse = ''))
+                      tertdat <- tertdat[,allgenes]
+                      colnames(tertdat) <- sapply(colnames(tertdat), function(a) paste0(a,'_tertiles',collapse = ''))
                       newdat <- cbind(newdat, tertdat)
                     } 
                     
                     if ('quartiles' %in% self$data_mode) {
-                      cols <- colnames(data)
                       quartdat <- as.data.table(t(apply(data,1,data_bin_4)))
-                      colnames(quartdat) <- sapply(cols, function(a) paste0(a,'_quartile',collapse = ''))
+                      quartdat <- quartdat[,allgenes]
+                      colnames(quartdat) <- sapply(colnames(quartdat), function(a) paste0(a,'_quartile',collapse = ''))
                       newdat <- cbind(newdat, quartdat)
                     } 
 
                     if ('ranks' %in% self$data_mode) {
-                      cols <- colnames(data)
                       rankdat <- as.data.table(t(apply(data,1,rank)))
-                      colnames(rankdat) <- sapply(cols, function(a) paste0(a,'_ranked',collapse = ''))
+                      rankdat <- rankdat[,allgenes]
+                      colnames(rankdat) <- sapply(colnames(rankdata), function(a) paste0(a,'_ranked',collapse = ''))
                       newdat <- cbind(newdat, rankdat)
                     }
                     
