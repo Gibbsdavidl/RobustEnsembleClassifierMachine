@@ -94,28 +94,28 @@ Data_eng <- R6Class("Data_eng",
                     
                     if ('binary' %in% self$data_mode) {
                       bindat <- as.data.table(t(apply(data,1,data_bin_2)))
-                      bindat <- bindat[,allgenes]
+                      bindat <- bindat[, ..allgenes]
                       colnames(bindat) <- sapply(colnames(bindat), function(a) paste0(a,'_binary',collapse = ''))
                       newdat <- cbind(newdat, bindat)
                     } 
                     
                     if ('tertiles' %in% self$data_mode) {
                       tertdat <- as.data.table(t(apply(data,1,data_bin_3)))
-                      tertdat <- tertdat[,allgenes]
+                      tertdat <- tertdat[, ..allgenes]
                       colnames(tertdat) <- sapply(colnames(tertdat), function(a) paste0(a,'_tertiles',collapse = ''))
                       newdat <- cbind(newdat, tertdat)
                     } 
                     
                     if ('quartiles' %in% self$data_mode) {
                       quartdat <- as.data.table(t(apply(data,1,data_bin_4)))
-                      quartdat <- quartdat[,allgenes]
+                      quartdat <- quartdat[, ..allgenes]
                       colnames(quartdat) <- sapply(colnames(quartdat), function(a) paste0(a,'_quartile',collapse = ''))
                       newdat <- cbind(newdat, quartdat)
                     } 
 
                     if ('ranks' %in% self$data_mode) {
                       rankdat <- as.data.table(t(apply(data,1,rank)))
-                      rankdat <- rankdat[,allgenes]
+                      rankdat <- rankdat[, ..allgenes]
                       colnames(rankdat) <- sapply(colnames(rankdata), function(a) paste0(a,'_ranked',collapse = ''))
                       newdat <- cbind(newdat, rankdat)
                     }
