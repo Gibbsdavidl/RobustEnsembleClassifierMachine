@@ -323,7 +323,6 @@ Robencla <- R6Class("Robencla",
                       self$signatures <- signatures
                       self$pair_list <- pair_list
                       self$sample_id <- sample_id
-                      self$label_name <- label_name
                       
                       # assume the file format
                       if (!is.null(file_name)) {
