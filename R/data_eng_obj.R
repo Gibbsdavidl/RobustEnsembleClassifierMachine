@@ -98,7 +98,7 @@ Data_eng <- R6Class("Data_eng",
                       cols <- colnames(data)
                       tertdat <- as.data.table(t(apply(data,1,data_bin_3)))
                       colnames(tertdat) <- sapply(cols, function(a) paste0(a,'_tertiles',collapse = ''))
-                      newdat <- cbind(newdat, quartdat)
+                      newdat <- cbind(newdat, tertdat)
                     } 
                     
                     if ('quartiles' %in% self$data_mode) {
