@@ -126,7 +126,7 @@ Data_eng <- R6Class("Data_eng",
                         print(pair_list_format)
                         stop(paste0('pair_list contains invalid value'))
                       }
-                      if (length(self$pair_list %% 2 != 0)) {
+                      if (length(self$pair_list) %% 2 != 0) {
                         print("Pair list must have an even length.")
                         stop('pair_list has invalid format or length.')
                       }
