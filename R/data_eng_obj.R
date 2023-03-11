@@ -89,28 +89,28 @@ Data_eng <- R6Class("Data_eng",
                     
                     if ('binary' %in% self$data_mode) {
                       cols <- colnames(data)
-                      quartdat <- data[ , (cols) := lapply(.SD, "data_bin_2"), .SDcols = cols]
-                      colnames(quartdat) <- sapply(cols, function(a) paste0(a,'_binary',collapse = ''))
-                      newdat <- cbind(newdat, quartdat)
+                      bindat <- as.data.table(t(apply(data,1,data_bin_2)))
+                      colnames(bindat) <- sapply(cols, function(a) paste0(a,'_binary',collapse = ''))
+                      newdat <- cbind(newdat, bindat)
                     } 
                     
                     if ('tertiles' %in% self$data_mode) {
                       cols <- colnames(data)
-                      quartdat <- data[ , (cols) := lapply(.SD, "data_bin_3"), .SDcols = cols]
-                      colnames(quartdat) <- sapply(cols, function(a) paste0(a,'_tertiles',collapse = ''))
+                      tertdat <- as.data.table(t(apply(data,1,data_bin_3)))
+                      colnames(tertdat) <- sapply(cols, function(a) paste0(a,'_tertiles',collapse = ''))
                       newdat <- cbind(newdat, quartdat)
                     } 
                     
                     if ('quartiles' %in% self$data_mode) {
                       cols <- colnames(data)
-                      quartdat <- data[ , (cols) := lapply(.SD, "data_bin_4"), .SDcols = cols]
+                      quartdat <- as.data.table(t(apply(data,1,data_bin_4)))
                       colnames(quartdat) <- sapply(cols, function(a) paste0(a,'_quartile',collapse = ''))
                       newdat <- cbind(newdat, quartdat)
                     } 
 
                     if ('ranks' %in% self$data_mode) {
                       cols <- colnames(data)
-                      rankdat <- data[ , (cols) := lapply(.SD, "rank", ties.method="min"), .SDcols = cols]
+                      rankdat <- as.data.table(t(apply(data,1,rank)))
                       colnames(rankdat) <- sapply(cols, function(a) paste0(a,'_ranked',collapse = ''))
                       newdat <- cbind(newdat, rankdat)
                     }
@@ -124,7 +124,6 @@ Data_eng <- R6Class("Data_eng",
                           print(pair_list_format)
                           stop(paste0('pair_list contains invalid value'))
                         }
-                        
                         subdat <- data[, pair_list_format, with=FALSE]  ## subset to only what's in the pair_list
                       } else {
                         subdat <- data
