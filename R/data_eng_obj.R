@@ -83,6 +83,7 @@ Data_eng <- R6Class("Data_eng",
                     pairdat <- NULL
                     newdat <- data.table()
                     allgenes <- c(self$pair_list, unlist(self$signatures))
+                    datcols <- colnames(data)
                     
                     if ('original' %in% self$data_mode) {
                       newdat <- cbind(newdat, data)
@@ -94,6 +95,7 @@ Data_eng <- R6Class("Data_eng",
                     
                     if ('binary' %in% self$data_mode) {
                       bindat <- as.data.table(t(apply(data,1,data_bin_2)))
+                      colnames(bindat) <- datcols
                       bindat <- bindat[, ..allgenes]
                       colnames(bindat) <- sapply(colnames(bindat), function(a) paste0(a,'_binary',collapse = ''))
                       newdat <- cbind(newdat, bindat)
@@ -101,6 +103,7 @@ Data_eng <- R6Class("Data_eng",
                     
                     if ('tertiles' %in% self$data_mode) {
                       tertdat <- as.data.table(t(apply(data,1,data_bin_3)))
+                      colnames(tertdat) <- datcols
                       tertdat <- tertdat[, ..allgenes]
                       colnames(tertdat) <- sapply(colnames(tertdat), function(a) paste0(a,'_tertiles',collapse = ''))
                       newdat <- cbind(newdat, tertdat)
@@ -108,6 +111,7 @@ Data_eng <- R6Class("Data_eng",
                     
                     if ('quartiles' %in% self$data_mode) {
                       quartdat <- as.data.table(t(apply(data,1,data_bin_4)))
+                      colnames(quartdat) <- datcols
                       quartdat <- quartdat[, ..allgenes]
                       colnames(quartdat) <- sapply(colnames(quartdat), function(a) paste0(a,'_quartile',collapse = ''))
                       newdat <- cbind(newdat, quartdat)
@@ -115,6 +119,7 @@ Data_eng <- R6Class("Data_eng",
 
                     if ('ranks' %in% self$data_mode) {
                       rankdat <- as.data.table(t(apply(data,1,rank)))
+                      colnames(rankdat) <- datcols
                       rankdat <- rankdat[, ..allgenes]
                       colnames(rankdat) <- sapply(colnames(rankdata), function(a) paste0(a,'_ranked',collapse = ''))
                       newdat <- cbind(newdat, rankdat)
