@@ -90,6 +90,9 @@ Robencla <- R6Class("Robencla",
                     #' @field combine_function function for combining across ensemble
                     combine_function = NULL,
                     
+                    #' @field verbose turn off warnings
+                    verbose = NULL,
+                    
                     #' @description Create a new `Recm` object.
                     #' @param name The object is named.
                     #' @return A new `recm` object.
@@ -222,7 +225,8 @@ Robencla <- R6Class("Robencla",
                                           label_name=NULL, 
                                           sample_id=NULL,
                                           drop_list=NULL, 
-                                          data_split=NULL){
+                                          data_split=NULL,
+                                          verbose=NULL){
                       # First reading it in
                       self$file_name <- file_name
                       self$data_mode <- data_mode
@@ -230,6 +234,7 @@ Robencla <- R6Class("Robencla",
                       self$pair_list <- pair_list
                       self$data_split <- data_split
                       self$label_name <- label_name
+                      self$verbose <- verbose
                       
                       # bug file_name checked although null
                       if (!is.null(file_name)) {
@@ -319,7 +324,8 @@ Robencla <- R6Class("Robencla",
                                                 pair_list=NULL,
                                                 label_name=NULL, 
                                                 sample_id=NULL, 
-                                                drop_list=NULL){
+                                                drop_list=NULL,
+                                                verbose=NULL){
                       #READING DATA
                       self$file_name <- file_name
                       self$data_mode <- data_mode
@@ -327,6 +333,7 @@ Robencla <- R6Class("Robencla",
                       self$pair_list <- pair_list
                       self$sample_id <- sample_id
                       self$label_name <- label_name
+                      self$verbose <- verbose
                       
                       # assume the file format
                       if (!is.null(file_name)) {
@@ -390,8 +397,10 @@ Robencla <- R6Class("Robencla",
                       data_var <- self$train_data[, lapply(.SD, var, na.rm=TRUE)]
                       data_var_idx <- which(data_var == 0.0)
                       if (length(data_var_idx) > 0) {
-                        print("TRAINING DATA CONTAINS ZERO VARIANCE COLUMNS")
-                        print("...filling with random noise...")
+                        if (is.null(verbose) || verbose > 0) {
+                          print("TRAINING DATA CONTAINS ZERO VARIANCE COLUMNS")
+                          print("...filling with random noise...")
+                        }
                         for (dvi in data_var_idx) {
                           self$train_data[,dvi] <- runif(n=nrow(self$train_data))
                         }
@@ -417,7 +426,8 @@ Robencla <- R6Class("Robencla",
                                                sep=NULL, 
                                                label_name=NULL, 
                                                sample_id=NULL, 
-                                               drop_list=NULL){
+                                               drop_list=NULL,
+                                               verbose=NULL){
                       
                       if (!is.null(file_name)) {
                         if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
@@ -490,8 +500,10 @@ Robencla <- R6Class("Robencla",
                       data_var <- self$test_data[, lapply(.SD, var, na.rm=TRUE)]
                       data_var_idx <- which(data_var == 0.0)
                       if (length(data_var_idx) > 0) {
-                        print("TEST DATA CONTAINS ZERO VARIANCE COLUMNS")
-                        print("...filling with random noise...")
+                        if (is.null(verbose) || verbose > 0) {
+                          print("TEST DATA CONTAINS ZERO VARIANCE COLUMNS")
+                          print("...filling with random noise...")
+                        }
                         for (dvi in data_var_idx) {
                           self$test_data[,dvi] <- runif(n=nrow(self$test_data))
                         }
@@ -824,7 +836,8 @@ Robencla <- R6Class("Robencla",
                                         signatures=NULL,
                                         pair_list=NULL,
                                         params=NULL,
-                                        combine_function=NULL
+                                        combine_function=NULL,
+                                        verbose=NULL
                                       ) {
                       
                       params[['objective']] <- "binary:logistic"
@@ -844,7 +857,8 @@ Robencla <- R6Class("Robencla",
                                      pair_list=pair_list,
                                      label_name=label_name, 
                                      sample_id=sample_id,
-                                     drop_list=drop_list)
+                                     drop_list=drop_list,
+                                     verbose=verbose)
                       
                       
                       for (cvi in 1:cv_rounds){
@@ -898,7 +912,8 @@ Robencla <- R6Class("Robencla",
                                         data_mode=NULL,
                                         signatures=NULL,
                                         pair_list=NULL,
-                                        params=NULL
+                                        params=NULL,
+                                        verbose=NULL
                     ) {
                       
                       params[['objective']] <- "binary:logistic"
@@ -918,7 +933,8 @@ Robencla <- R6Class("Robencla",
                                             pair_list=pair_list,
                                             label_name=label_name, 
                                             sample_id=sample_id,
-                                            drop_list=drop_list)
+                                            drop_list=drop_list,
+                                            verbose = verbose)
                       
                       # building the first layer of predictors, each a binary prediction
                       # on one factor in the target labels.
@@ -943,14 +959,16 @@ Robencla <- R6Class("Robencla",
                                         sep=NULL,
                                         label_name=NULL,
                                         sample_id=NULL,
-                                        drop_list=NULL) {
+                                        drop_list=NULL,
+                                        verbose=NULL) {
                     
                       self$test_data_setup( data_frame=data_frame,
                                       file_name=data_file, 
                                       sep=sep, 
                                       label_name=label_name, 
                                       sample_id=sample_id, 
-                                      drop_list=drop_list)
+                                      drop_list=drop_list,
+                                      verbose = verbose)
                       
                       self$predict(self$test_data, self$final_params$combine_function)
                   
