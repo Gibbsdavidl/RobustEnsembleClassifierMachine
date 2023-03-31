@@ -696,13 +696,14 @@ Robencla <- R6Class("Robencla",
                     },
                     
                     
-                    classification_metrics = function(use_cv_results=TRUE) {
+                    classification_metrics = function(use_cv_results=TRUE, these_calls=NULL, these_labels=NULL) {
                       
                         # there are instances where some classes are not returned
                         # in the BestCalls, those can cause numeric(0) in sens, spec, etc.
                         isEmpty <- function(x) {
                           return(identical(x, numeric(0)))
                         }
+                      
                         fixMissing <- function(x) {
                           sapply(x, function(a) if(isEmpty(a)){0}else{a})
                         }
@@ -710,15 +711,18 @@ Robencla <- R6Class("Robencla",
                         if (use_cv_results) {
                           calls <- self$cv_results$BestCalls
                           labels <- self$cv_results$Label
-                          
+                        } 
+                       
+                        if ( (!is.null(these_calls)) && (!is.null(these_labels)) ) {
+                          labels <- these_labels
+                          calls <- these_calls
                         } else {
                           if (is.null(self$test_label)) {
                             return("No test labels.")
                           } else {
                             # first make sure our labels are mapped to integers correctly
                             labels <- self$test_label
-                            
-                            # get the calls
+                            # then get the calls
                             mapped_calls <- self$ensbl[['final']]$pred_combined
                             calls <- self$unmap_multiclass_labels(mapped_calls)
                           }
@@ -726,7 +730,6 @@ Robencla <- R6Class("Robencla",
                           
                         # then build the multi-class confusion matrix
                         confusion_matrix <- table( labels, calls )
-                        
                         
                         # labels of the confusion matrix
                         cm_labels <- rownames(confusion_matrix)
