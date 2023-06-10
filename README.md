@@ -58,8 +58,8 @@ anne$autocv(
   # The number of cross validation folds to predict on, ignores data_split if >1.
   cv_rounds=5,
             
-  # The data transformation mode, set using  pairs,sigpairs,quartiles,tertiles,binarize,ranks,original
-  data_mode=c('sigpairs','pairs'), 
+  # The data transformation mode, set using  allpairs,pairs,sigpairs,quartiles,tertiles,binarize,ranks,original
+  data_mode=c('sigpairs','allpairs'),  # pairs takes LR pairs from the pair_list, allpairs forms all pairs from pair_list
   
   # If using signature pairs, then the list defining the signatures, must be composed of column names
   signatures=sigs,
@@ -138,7 +138,7 @@ anne$autotrain(data_frame=data.table::fread('data/bcp_train_data.csv', sep=',', 
                # data_file='data/bcp_train_data.csv', # subset of data/Breast Cancer Prediction.csv',
                label_name='Class',
                sample_id = 'Sample code number',
-               data_mode=c('sigpairs','pairs'), # pairs,sigpairs,quartiles,tertiles,binarize,ranks,original #
+               data_mode=c('sigpairs','pairs'), # allpairs,pairs,sigpairs,quartiles,tertiles,binarize,ranks,original #
                signatures=sigs,
                pair_list=pair_list,  # subset to these genes.
                params=params)
