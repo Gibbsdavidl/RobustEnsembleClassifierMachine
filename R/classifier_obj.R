@@ -145,8 +145,6 @@ Robencla <- R6Class("Robencla",
                       colnames(self$test_data) <- gsub(" ", "_", colnames(self$test_data))
                       return(invisible(self))
                     },
-                    
-                    
 
                     
                     
@@ -546,13 +544,14 @@ Robencla <- R6Class("Robencla",
                         self$ensbl[[li]] <- Ensemble$new(name=li, 
                                                          obj_mode='ensemble',
                                                          size=params$size, 
+                                                         data_mode=self$data_mode,
                                                          data=self$train_data,
                                                          pair_list=this_pair_list,
                                                          signatures=self$signatures,
                                                          label=bin_label, 
                                                          params=params)
 
-                        self$ensbl[[li]]$proc_data(self$op_mode)
+                        self$ensbl[[li]]$data_eng(self$op_mode)
                         
                       }
                       return(invisible(self))
@@ -865,7 +864,8 @@ Robencla <- R6Class("Robencla",
                                      sample_id=sample_id,
                                      drop_list=drop_list,
                                      verbose=verbose)
-                      
+
+                      self$op_mode <- 'train'
                       
                       for (cvi in 1:cv_rounds){
                         
