@@ -29,6 +29,7 @@ params <- list(
                max_depth=6,    # "height" of the tree, 6 is actually default. I think about 12 seems better.  (xgboost parameter)
                eta=0.2,        # this is the learning rate. smaller values slow it down, more conservative   (xgboost parameter)
                nrounds=24,     # number of rounds of training, lower numbers less overfitting (potentially)  (xgboost parameter)
+               nearly_stopping=2, # number of rounds without improvment stops the training (xgboost early_stopping_rounds)
                nthreads=4,     # parallel threads
                gamma=1,        # Minimum loss reduction required to again partition a leaf node. higher number ~ more conservative (xgboost parameter)
                lambda=1.5,     # L2 regularization term on weights, higher number ~ more conservative (xgboost parameter)

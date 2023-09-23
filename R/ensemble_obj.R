@@ -24,7 +24,7 @@ Ensemble <- R6Class("Ensemble",
                   label = NULL,    # the label vector 
                   params = NULL,   # parameters to train xgboost
                   nrounds=NULL,    # number of rounds of training
-                  nearly_stopping=NULL, # number of rounds before early stopping
+                  early_stopping_rounds=NULL, # number of rounds before early stopping
                   nthreads=NULL,   # number of threads to use
                   verbose=NULL,    # verbose statements printed
                   preds = NULL,    # predictions made, as list
@@ -52,7 +52,7 @@ Ensemble <- R6Class("Ensemble",
                     self$label <- label 
                     self$combine_function <- params[['combine_function']]
                     self$nrounds <- params[['nrounds']]
-                    self$nearly_stopping <- params[['nearly_stopping']]
+                    self$early_stopping_rounds <- params[['early_stopping_rounds']]
                     self$nthreads <- params[['nthreads']]
                     self$verbose <- params[['verbose']]
                     self$params <- params
@@ -127,18 +127,18 @@ Ensemble <- R6Class("Ensemble",
                       
                       if (self$obj_mode != 'final') {
                         self$bstl[[i]] <- xgboost(params=self$params, 
-                                                  dtrain, 
+                                                  data=dtrain, 
                                                   nrounds=self$nrounds,
-                                                  early_stopping_rounds=self$nearly_stopping,
+                                                  early_stopping_rounds=self$early_stopping_rounds,
                                                   verbose = self$verbose)
                       } else {
                         # it's multiclass final 
                         self$params[['num_class']] <- n_classes
                         
                         self$bstl[[i]] <- xgboost(params=self$params, 
-                                                  dtrain, 
+                                                  data=dtrain, 
                                                   nrounds=self$nrounds,
-                                                  early_stopping_rounds=self$nearly_stopping,
+                                                  early_stopping_rounds=self$early_stopping_rounds,
                                                   verbose = self$verbose)
                         
                       }

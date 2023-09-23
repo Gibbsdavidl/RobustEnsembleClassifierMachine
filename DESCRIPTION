@@ -1,6 +1,6 @@
 Package: robencla
 Title: A robust ensemble of XGBoosts and data transformations.
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: 
     person(given = "David",
            family = "Gibbs",
