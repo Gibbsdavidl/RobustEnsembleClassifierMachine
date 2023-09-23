@@ -17,11 +17,14 @@ Robencla <- R6Class("Robencla",
                     
                     #' @field data_mode string vector, dictates the types of data engineeering, acceptable values include combination of: original  quartiles  pairs  ranks  sigpairs
                     data_mode = NULL,
+
+                    #' @field op_mode string describing the operation mode 'data', 'train', 'test'
+                    op_mode = NULL,
                     
                     #' @field signatures lists of variables, must be in data, that will be used together, and compared to other signatures
                     signatures = NULL,
                     
-                    #' @field pair_list a list of column names in the data, that will become paired data
+                    #' @field pair_list a list of column names in the data, that will become paired data, named list or vector
                     pair_list = NULL,
                     
                     #' @field file_name the data file
@@ -144,23 +147,7 @@ Robencla <- R6Class("Robencla",
                     },
                     
                     
-                    # data engineering
-                    #' @description Data engineering, replaces the object's data.table.
-                    data_eng = function(data_source=NULL) {
-                      
-                      # create a new data engineering object
-                      this_deng <- Data_eng$new(self$data_mode, self$signatures, self$pair_list)
-                                          
-                      if (data_source == 'train') {
-                        self$train_data <- this_deng$data_eng(self$train_data)
-                      } else if (data_source == 'test') {
-                        self$test_data <- this_deng$data_eng(self$test_data)
-                      } else if (data_source == 'data') {
-                        self$data <- this_deng$data_eng(self$data)
-                      } else {
-                        stop('ERROR: data source must be train, test, or data.')
-                      }
-                    },
+
                     
                     
                     #' @description Splits the data into training and test data.
@@ -307,7 +294,8 @@ Robencla <- R6Class("Robencla",
                       }
                       
                       # DATA ENGINEERING
-                      self$data_eng('data')
+                      # self$data_eng('data')
+                      self$op_mode <- 'data'
                       
                       return(invisible(self))
                     },
@@ -409,10 +397,13 @@ Robencla <- R6Class("Robencla",
                       # save the final data columns used
                       self$data_colnames <- colnames(self$train_data)
                       
-                      # DATA ENGINEERING
-                      self$data_eng('train')
                       # and record the unique categories in labels 
                       self$unique_labels <- unique(self$train_label)
+
+                      # DATA ENGINEERING
+                      # self$data_eng('train')
+                      self$op_mode <- 'train'
+
                       return(invisible(self))
                     },
                     
@@ -510,7 +501,8 @@ Robencla <- R6Class("Robencla",
                       }
                       
                       # DATA ENGINEERING
-                      self$data_eng('test')
+                      # self$data_eng('test')
+                      self$op_mode <- 'test'
 
                       return(invisible(self))
                     },
@@ -544,12 +536,23 @@ Robencla <- R6Class("Robencla",
                         bin_label <- self$binarize_label(label=self$train_label, x=li)
                         # then create the classifier object
 
+                        ## !! pair list is either a named list or a vector
+                        if (class(self$pair_list) == "list") {
+                          this_pair_list <- self$pair_list[[li]]
+                        } else {
+                          this_pair_list <- self$pair_list
+                        }
+
                         self$ensbl[[li]] <- Ensemble$new(name=li, 
                                                          obj_mode='ensemble',
                                                          size=params$size, 
                                                          data=self$train_data,
+                                                         pair_list=this_pair_list,
+                                                         signatures=self$signatures,
                                                          label=bin_label, 
                                                          params=params)
+
+                        self$ensbl[[li]]$proc_data(self$op_mode)
                         
                       }
                       return(invisible(self))

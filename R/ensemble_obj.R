@@ -19,7 +19,8 @@ Ensemble <- R6Class("Ensemble",
                   obj_mode = NULL, # either 'ensemble' or 'final'
                   size  = NULL,    # number of xgboost predictors
                   perc = NULL,     # percent of data to sample
-                  data = NULL,     # the data to train from
+                  train_data = NULL,     # the data to train from
+                  pair_list=NULL,  # a char vector of genes
                   label = NULL,    # the label vector 
                   params = NULL,   # parameters to train xgboost
                   nrounds=NULL,    # number of rounds of training
@@ -34,13 +35,20 @@ Ensemble <- R6Class("Ensemble",
                   initialize = function(name,
                                         obj_mode,
                                         size, 
+                                        data_mode,
                                         data, 
+                                        pair_list,
+                                        signatures,
                                         label, 
                                         params) {
                     self$name <- name
                     self$obj_mode <- obj_mode
                     self$size <- size
-                    self$data <- data 
+                    self$data_mode <- data_mode
+                    self$train_data <- train_data
+                    self$test_data <- NULL
+                    self$pair_list <- pair_list
+                    self$signatures <- signatures
                     self$label <- label 
                     self$combine_function <- params[['combine_function']]
                     self$nrounds <- params[['nrounds']]
@@ -62,7 +70,26 @@ Ensemble <- R6Class("Ensemble",
                     paste0('ensemble: ', self$name ) 
                   },
                   
-                  
+
+                  # data engineering
+                  #' @description Data engineering, replaces the object's data.table.
+                  data_eng = function(data_source=NULL) {
+                    
+                    # create a new data engineering object
+                    this_deng <- Data_eng$new(self$data_mode, self$signatures, self$pair_list)
+                                        
+                    if (data_source == 'train') {
+                      self$train_data <- this_deng$data_eng(self$train_data)
+                    } else if (data_source == 'test') {
+                      self$test_data <- this_deng$data_eng(self$test_data)
+                    } else if (data_source == 'data') {
+                      self$train_data <- this_deng$data_eng(self$train_data)
+                    } else {
+                      stop('ERROR: data source must be train, test, or data.')
+                    }
+                  },
+
+
                   # Each member of the ensemble has a sample of the 
                   # training data, the proportion specified by "perc"
                   # or percentage.
@@ -72,11 +99,11 @@ Ensemble <- R6Class("Ensemble",
                     
                     if (perc < 1.0) {
                       ## generate random index
-                      idx <- sample.int(n = nrow(self$data), size = perc*nrow(self$data), replace = F)
-                      res0[['data']] <- as.matrix(self$data[idx,])
+                      idx <- sample.int(n = nrow(self$train_data), size = perc*nrow(self$train_data), replace = F)
+                      res0[['data']] <- as.matrix(self$train_data[idx,])
                       res0[['label']] <- as.vector(self$label[idx])
                     } else {
-                      res0[['data']] <- as.matrix(self$data)
+                      res0[['data']] <- as.matrix(self$train_data)
                       res0[['label']] <- as.vector(self$label)
                     } 
                     
