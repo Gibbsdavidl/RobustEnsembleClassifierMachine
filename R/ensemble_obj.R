@@ -17,9 +17,11 @@ Ensemble <- R6Class("Ensemble",
                   bstl = list(),   # booster list
                   name = NULL,     # name of this member
                   obj_mode = NULL, # either 'ensemble' or 'final'
+                  data_mode = NULL, # what type of features are we making
                   size  = NULL,    # number of xgboost predictors
                   perc = NULL,     # percent of data to sample
-                  train_data = NULL,     # the data to train from
+                  train_data = NULL,  # the data to train from
+                  test_data = NULL, # will be filled by test data
                   pair_list=NULL,  # a char vector of genes
                   label = NULL,    # the label vector 
                   params = NULL,   # parameters to train xgboost
