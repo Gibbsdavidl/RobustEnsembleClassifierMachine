@@ -127,9 +127,12 @@ Ensemble <- R6Class("Ensemble",
                       dtrain <- xgb.DMatrix(data=sdat[['data']], 
                                             label = sdat[['label']],
                                             nthread=self$nthreads)
+
+                      # xgboost compains about this params member
+                      p2 <- within(params, rm('early_stopping_rounds')) 
                       
                       if (self$obj_mode != 'final') {
-                        self$bstl[[i]] <- xgboost(params=self$params, 
+                        self$bstl[[i]] <- xgboost(params=p2, 
                                                   data=dtrain, 
                                                   nrounds=self$nrounds,
                                                   early_stopping_rounds=self$early_stopping_rounds,
@@ -138,7 +141,7 @@ Ensemble <- R6Class("Ensemble",
                         # it's multiclass final 
                         self$params[['num_class']] <- n_classes
                         
-                        self$bstl[[i]] <- xgboost(params=self$params, 
+                        self$bstl[[i]] <- xgboost(params=p2, 
                                                   data=dtrain, 
                                                   nrounds=self$nrounds,
                                                   early_stopping_rounds=self$early_stopping_rounds,
@@ -191,7 +194,7 @@ Ensemble <- R6Class("Ensemble",
                 
                   
                   
-                  member_predict = function(op_mode, combine_function){
+                  member_predict = function(data, combine_function){
                     
                     final_combine_function <- ''
                     
@@ -205,9 +208,9 @@ Ensemble <- R6Class("Ensemble",
                     
                     } else {
 
-                      if (op_mode == 'train') {
+                      if (data == 'train') {
                         data <- self$train_data
-                      } else if (op_mode == 'test') {
+                      } else if (data == 'test') {
                         data <- self$test_data
                       } else {
                         data <- NULL
