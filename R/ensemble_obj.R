@@ -17,15 +17,19 @@ Ensemble <- R6Class("Ensemble",
                   bstl = list(),   # booster list
                   name = NULL,     # name of this member
                   obj_mode = NULL, # either 'ensemble' or 'final'
+                  data_mode = NULL, # what type of features are we making
                   size  = NULL,    # number of xgboost predictors
                   perc = NULL,     # percent of data to sample
-                  data = NULL,     # the data to train from
+                  train_data = NULL,  # the data to train from
+                  test_data = NULL, # will be filled by test data
+                  pair_list = NULL,  # a char vector of genes
+                  signatures = NULL, # the list of gene sets
                   label = NULL,    # the label vector 
                   params = NULL,   # parameters to train xgboost
-                  nrounds=NULL,    # number of rounds of training
-                  nearly_stopping=NULL, # number of rounds before early stopping
-                  nthreads=NULL,   # number of threads to use
-                  verbose=NULL,    # verbose statements printed
+                  nrounds = NULL,    # number of rounds of training
+                  early_stopping_rounds = NULL, # number of rounds before early stopping
+                  nthreads = NULL,   # number of threads to use
+                  verbose = NULL,    # verbose statements printed
                   preds = NULL,    # predictions made, as list
                   pred_table = NULL,  # table of predictions
                   pred_combined = NULL, # combined predictions
@@ -34,17 +38,24 @@ Ensemble <- R6Class("Ensemble",
                   initialize = function(name,
                                         obj_mode,
                                         size, 
-                                        data, 
+                                        data_mode,
+                                        train_data, 
+                                        pair_list,
+                                        signatures,
                                         label, 
                                         params) {
                     self$name <- name
                     self$obj_mode <- obj_mode
                     self$size <- size
-                    self$data <- data 
+                    self$data_mode <- data_mode
+                    self$train_data <- train_data
+                    self$test_data <- NULL
+                    self$pair_list <- pair_list
+                    self$signatures <- signatures
                     self$label <- label 
                     self$combine_function <- params[['combine_function']]
                     self$nrounds <- params[['nrounds']]
-                    self$nearly_stopping <- params[['nearly_stopping']]
+                    self$early_stopping_rounds <- params[['early_stopping_rounds']]
                     self$nthreads <- params[['nthreads']]
                     self$verbose <- params[['verbose']]
                     self$params <- params
@@ -62,7 +73,26 @@ Ensemble <- R6Class("Ensemble",
                     paste0('ensemble: ', self$name ) 
                   },
                   
-                  
+
+                  # data engineering
+                  #' @description Data engineering, replaces the object's data.table.
+                  data_eng = function(data_source=NULL) {
+                    
+                    # create a new data engineering object
+                    this_deng <- Data_eng$new(self$data_mode, self$signatures, self$pair_list)
+                                        
+                    if (data_source == 'train') {
+                      self$train_data <- this_deng$data_eng(self$train_data)
+                    } else if (data_source == 'test') {
+                      self$test_data <- this_deng$data_eng(self$test_data)
+                    } else if (data_source == 'data') {
+                      self$train_data <- this_deng$data_eng(self$train_data)
+                    } else {
+                      stop('ERROR: data source must be train, test, or data.')
+                    }
+                  },
+
+
                   # Each member of the ensemble has a sample of the 
                   # training data, the proportion specified by "perc"
                   # or percentage.
@@ -72,11 +102,11 @@ Ensemble <- R6Class("Ensemble",
                     
                     if (perc < 1.0) {
                       ## generate random index
-                      idx <- sample.int(n = nrow(self$data), size = perc*nrow(self$data), replace = F)
-                      res0[['data']] <- as.matrix(self$data[idx,])
+                      idx <- sample.int(n = nrow(self$train_data), size = perc*nrow(self$train_data), replace = F)
+                      res0[['data']] <- as.matrix(self$train_data[idx,])
                       res0[['label']] <- as.vector(self$label[idx])
                     } else {
-                      res0[['data']] <- as.matrix(self$data)
+                      res0[['data']] <- as.matrix(self$train_data)
                       res0[['label']] <- as.vector(self$label)
                     } 
                     
@@ -100,18 +130,18 @@ Ensemble <- R6Class("Ensemble",
                       
                       if (self$obj_mode != 'final') {
                         self$bstl[[i]] <- xgboost(params=self$params, 
-                                                  dtrain, 
+                                                  data=dtrain, 
                                                   nrounds=self$nrounds,
-                                                  early_stopping_rounds=self$nearly_stopping,
+                                                  early_stopping_rounds=self$early_stopping_rounds,
                                                   verbose = self$verbose)
                       } else {
                         # it's multiclass final 
                         self$params[['num_class']] <- n_classes
                         
                         self$bstl[[i]] <- xgboost(params=self$params, 
-                                                  dtrain, 
+                                                  data=dtrain, 
                                                   nrounds=self$nrounds,
-                                                  early_stopping_rounds=self$nearly_stopping,
+                                                  early_stopping_rounds=self$early_stopping_rounds,
                                                   verbose = self$verbose)
                         
                       }
@@ -158,27 +188,45 @@ Ensemble <- R6Class("Ensemble",
                     }
                     self$pred_combined <- res0
                   },
+                
                   
                   
-                  
-                  member_predict = function(data, combine_function){
-                    # for each member of the ensemble
-                    for (i in 1:self$size) {
-                      # make a prediction on this data
-                      self$preds[[i]] <- predict(self$bstl[[i]], data)
-                    }
+                  member_predict = function(op_mode, combine_function){
                     
-                    # then group all the predictions together
-                    self$pred_table <- do.call(cbind.data.frame, self$preds)
-                    colnames(self$pred_table) <- sapply(1:self$size, function(a) paste0('ep',a))
-                    
-                    # and make a final call or combine the predictions using a function
                     final_combine_function <- ''
+                    
                     if (self$name == 'final') { # then we might have have multiclass calls.
+                      # for each member of the ensemble
+                      for (i in 1:self$size) {
+                        # make a prediction on this data
+                        self$preds[[i]] <- predict(self$bstl[[i]], data)
+                      }                    
                       self$pred_combined <- self$final_ensemble_combine(final_combine_function)
+                    
                     } else {
-                      # then we combine all the predictions by applying the combine_function
-                      self$pred_combined <- self$ensemble_combine(self$combine_function)
+
+                      if (op_mode == 'train') {
+                        data <- self$train_data
+                      } else if (op_mode == 'test') {
+                        data <- self$test_data
+                      } else {
+                        data <- NULL
+                      }
+
+                      # for each member of the ensemble
+                      for (i in 1:self$size) {
+                        # make a prediction on this data
+                        self$preds[[i]] <- predict(self$bstl[[i]], data)
+                      }
+                    
+                      # then group all the predictions together
+                      self$pred_table <- do.call(cbind.data.frame, self$preds)
+                      colnames(self$pred_table) <- sapply(1:self$size, function(a) paste0('ep',a))
+                      
+                      # and make a final call or combine the predictions using a function
+                      
+                        # then we combine all the predictions by applying the combine_function
+                        self$pred_combined <- self$ensemble_combine(self$combine_function)
                     }
                     
                   },
