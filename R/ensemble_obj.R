@@ -188,36 +188,45 @@ Ensemble <- R6Class("Ensemble",
                     }
                     self$pred_combined <- res0
                   },
-                  
+                
                   
                   
                   member_predict = function(op_mode, combine_function){
-
-                    if (op_mode == 'train') {
-                      data <- self$train_data
-                    } else if (op_mode == 'test') {
-                      data <- self$test_data
-                    } else {
-                      data <- NULL
-                    }
-
-                    # for each member of the ensemble
-                    for (i in 1:self$size) {
-                      # make a prediction on this data
-                      self$preds[[i]] <- predict(self$bstl[[i]], data)
-                    }
                     
-                    # then group all the predictions together
-                    self$pred_table <- do.call(cbind.data.frame, self$preds)
-                    colnames(self$pred_table) <- sapply(1:self$size, function(a) paste0('ep',a))
-                    
-                    # and make a final call or combine the predictions using a function
                     final_combine_function <- ''
+                    
                     if (self$name == 'final') { # then we might have have multiclass calls.
+                      # for each member of the ensemble
+                      for (i in 1:self$size) {
+                        # make a prediction on this data
+                        self$preds[[i]] <- predict(self$bstl[[i]], data)
+                      }                    
                       self$pred_combined <- self$final_ensemble_combine(final_combine_function)
+                    
                     } else {
-                      # then we combine all the predictions by applying the combine_function
-                      self$pred_combined <- self$ensemble_combine(self$combine_function)
+
+                      if (op_mode == 'train') {
+                        data <- self$train_data
+                      } else if (op_mode == 'test') {
+                        data <- self$test_data
+                      } else {
+                        data <- NULL
+                      }
+
+                      # for each member of the ensemble
+                      for (i in 1:self$size) {
+                        # make a prediction on this data
+                        self$preds[[i]] <- predict(self$bstl[[i]], data)
+                      }
+                    
+                      # then group all the predictions together
+                      self$pred_table <- do.call(cbind.data.frame, self$preds)
+                      colnames(self$pred_table) <- sapply(1:self$size, function(a) paste0('ep',a))
+                      
+                      # and make a final call or combine the predictions using a function
+                      
+                        # then we combine all the predictions by applying the combine_function
+                        self$pred_combined <- self$ensemble_combine(self$combine_function)
                     }
                     
                   },
