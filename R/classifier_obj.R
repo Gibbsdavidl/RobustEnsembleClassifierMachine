@@ -321,6 +321,8 @@ Robencla <- R6Class("Robencla",
                       self$label_name <- label_name
                       self$verbose <- verbose
                       
+                      print('starting train data setup')
+
                       # assume the file format
                       if (!is.null(file_name)) {
                         if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
@@ -401,6 +403,9 @@ Robencla <- R6Class("Robencla",
                       # DATA ENGINEERING
                       # self$data_eng('train')
                       self$op_mode <- 'train'
+
+                      print('finish train data setup')
+
 
                       return(invisible(self))
                     },
@@ -527,9 +532,13 @@ Robencla <- R6Class("Robencla",
                     #'
                     build_label_ensemble = function(params) {
                       
+                      print('starting ensemble build')
+
                       # for each category
                       for (li in self$unique_labels) {
                         
+                        print(paste0('subtype ',li))
+
                         # first create the binarized label
                         bin_label <- self$binarize_label(label=self$train_label, x=li)
                         # then create the classifier object
@@ -545,7 +554,7 @@ Robencla <- R6Class("Robencla",
                                                          obj_mode='ensemble',
                                                          size=params$size, 
                                                          data_mode=self$data_mode,
-                                                         data=self$train_data,
+                                                         train_data=self$train_data,
                                                          pair_list=this_pair_list,
                                                          signatures=self$signatures,
                                                          label=bin_label, 
@@ -554,6 +563,9 @@ Robencla <- R6Class("Robencla",
                         self$ensbl[[li]]$data_eng(self$op_mode)
                         
                       }
+
+                      print('finished ensemble build')
+                      
                       return(invisible(self))
                     },
                     

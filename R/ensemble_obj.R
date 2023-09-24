@@ -191,7 +191,16 @@ Ensemble <- R6Class("Ensemble",
                   
                   
                   
-                  member_predict = function(data, combine_function){
+                  member_predict = function(op_mode, combine_function){
+
+                    if (op_mode == 'train') {
+                      data <- self$train_data
+                    } else if (op_mode == 'test') {
+                      data <- self$test_data
+                    } else {
+                      data <- NULL
+                    }
+
                     # for each member of the ensemble
                     for (i in 1:self$size) {
                       # make a prediction on this data
