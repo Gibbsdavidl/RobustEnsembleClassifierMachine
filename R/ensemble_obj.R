@@ -23,6 +23,7 @@ Ensemble <- R6Class("Ensemble",
                   train_data = NULL,  # the data to train from
                   test_data = NULL, # will be filled by test data
                   pair_list = NULL,  # a char vector of genes
+                  signatures = NULL, # the list of gene sets
                   label = NULL,    # the label vector 
                   params = NULL,   # parameters to train xgboost
                   nrounds = NULL,    # number of rounds of training
