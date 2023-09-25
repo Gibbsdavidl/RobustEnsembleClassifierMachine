@@ -128,9 +128,7 @@ Ensemble <- R6Class("Ensemble",
                                             label = sdat[['label']],
                                             nthread=self$nthreads)
 
-                      # xgboost compains about this params member
-                      p2 <- within(params, rm('early_stopping_rounds')) 
-                      
+                      # xgboost compains about this params member                      
                       p2 <- within(self$params, rm('early_stopping_rounds')) 
                       
                       if (self$obj_mode != 'final') {
