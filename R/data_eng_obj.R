@@ -142,7 +142,7 @@ Data_eng <- R6Class("Data_eng",
                       }
                       newcol_names <- c()
                       newcol_dat <- list()
-                      cols <- self$pair_list #colnames(data)
+                      cols <- self$pair_list 
                       for (ci in seq.int(from=1,to=length(self$pair_list),by=2)) {
                           cj <- ci+1
                           res0 <- as.numeric(data[,.SD,.SDcols=cols[ci]] > data[,.SD,.SDcols=cols[cj]])

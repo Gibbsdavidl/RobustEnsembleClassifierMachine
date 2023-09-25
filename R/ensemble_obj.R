@@ -196,7 +196,9 @@ Ensemble <- R6Class("Ensemble",
                   
                   member_predict = function(data, combine_function){
                     
-
+                    if (all(class(data)[1] == 'matrix') == FALSE) {
+                      data <- as.matrix(data)
+                    }
 
                     for (i in 1:self$size) {
                       # make a prediction on this data
