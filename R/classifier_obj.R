@@ -620,7 +620,10 @@ Robencla <- R6Class("Robencla",
                       self$ensbl[["final"]] <- Ensemble$new(name="final",
                                                          obj_mode="final",
                                                          size=params$size, 
+                                                         data_mode=self$data_mode,
                                                          train_data=self$pred_table,
+                                                         pair_list=c(),
+                                                         signatures=c(),
                                                          label=remapped_label, 
                                                          params=params
                                                     )
