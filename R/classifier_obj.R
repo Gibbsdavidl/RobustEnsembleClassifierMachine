@@ -658,14 +658,11 @@ Robencla <- R6Class("Robencla",
                     
                     
                     ensemble_predict = function(data, combine_function) {
-                      if (all(class(data)[1] == 'matrix') == FALSE) {
-                        data <- as.matrix(data)
-                      }
                       for (li in self$unique_labels) {
-                        self$ensbl[[li]]$test_data <- data
+                        self$ensbl[[li]]$test_data <- data # can't be matrix until after data eng
                         self$ensbl[[li]]$data_eng('test')
                         self$ensbl[[li]]$member_predict(
-                          self$ensbl[[li]]$test_data, combine_function)
+                        self$ensbl[[li]]$test_data, combine_function)
                       }
                       return(invisible(self))
                     },
