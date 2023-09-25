@@ -139,7 +139,7 @@ Ensemble <- R6Class("Ensemble",
                                                   verbose = self$verbose)
                       } else {
                         # it's multiclass final 
-                        self$params[['num_class']] <- n_classes
+                        p2[['num_class']] <- n_classes
                         
                         self$bstl[[i]] <- xgboost(params=p2, 
                                                   data=dtrain, 
@@ -196,6 +196,8 @@ Ensemble <- R6Class("Ensemble",
                   
                   member_predict = function(data, combine_function){
                     
+
+
                     for (i in 1:self$size) {
                       # make a prediction on this data
                       self$preds[[i]] <- predict(self$bstl[[i]], data)
