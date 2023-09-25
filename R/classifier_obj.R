@@ -654,7 +654,7 @@ Robencla <- R6Class("Robencla",
                         data <- as.matrix(data)
                       }
                       for (li in self$unique_labels) {
-                        (self$ensbl[[li]])$member_predict(self$ensbl[[li]])$test_data, combine_function)
+                        self$ensbl[[li]]$member_predict(self$ensbl[[li]]$test_data, combine_function)
                       }
                       return(invisible(self))
                     },
