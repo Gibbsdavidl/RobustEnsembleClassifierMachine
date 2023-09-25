@@ -583,7 +583,6 @@ Robencla <- R6Class("Robencla",
                     },
                     
                     
-                    
                     remap_multiclass_labels = function(label) {
                       mapper <- list() # first we construct a mapper function
                       idx <- 0
@@ -636,12 +635,18 @@ Robencla <- R6Class("Robencla",
                     },
                     
                     
-                    
                     train_final = function(perc) {
                       self$ensbl[['final']]$train_models(perc)
                       return(invisible(self))
                     },
                     
+                    
+                    ensemble_setup = function(combine_function) {
+                      for (li in self$unique_labels) {
+                        (self$ensbl[[li]])$member_predict(self$ensbl[[li]])$train_data, combine_function)
+                      }
+                      return(invisible(self))
+                    },
                     
                     
                     ensemble_predict = function(data, combine_function) {
@@ -649,11 +654,10 @@ Robencla <- R6Class("Robencla",
                         data <- as.matrix(data)
                       }
                       for (li in self$unique_labels) {
-                        (self$ensbl[[li]])$member_predict(data, combine_function)
+                        (self$ensbl[[li]])$member_predict(self$ensbl[[li]])$test_data, combine_function)
                       }
                       return(invisible(self))
                     },
-                    
                     
                     
                     # predict final uses predictions from predict_ensemble
@@ -959,7 +963,7 @@ Robencla <- R6Class("Robencla",
                       # training and making predictions on the training data
                       self$build_label_ensemble(params=params)$
                         train_models(params$train_perc)$
-                        ensemble_predict(self$train_data, params$combine_function)
+                        ensemble_setup(params$combine_function)
 
                       
                       # then we build the output layer, trained on the predictions of the first layer
