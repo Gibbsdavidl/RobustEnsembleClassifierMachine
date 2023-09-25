@@ -127,11 +127,14 @@ Ensemble <- R6Class("Ensemble",
                       dtrain <- xgb.DMatrix(data=sdat[['data']], 
                                             label = sdat[['label']],
                                             nthread=self$nthreads)
+
+                      # xgboost compains about this params member
+                      p2 <- within(params, rm('early_stopping_rounds')) 
                       
                       p2 <- within(self$params, rm('early_stopping_rounds')) 
                       
                       if (self$obj_mode != 'final') {
-                        self$bstl[[i]] <- xgboost(params=self$params, 
+                        self$bstl[[i]] <- xgboost(params=p2, 
                                                   data=dtrain, 
                                                   nrounds=self$nrounds,
                                                   early_stopping_rounds=self$early_stopping_rounds,
@@ -140,7 +143,7 @@ Ensemble <- R6Class("Ensemble",
                         # it's multiclass final 
                         self$params[['num_class']] <- n_classes
                         
-                        self$bstl[[i]] <- xgboost(params=self$params, 
+                        self$bstl[[i]] <- xgboost(params=p2, 
                                                   data=dtrain, 
                                                   nrounds=self$nrounds,
                                                   early_stopping_rounds=self$early_stopping_rounds,
@@ -205,6 +208,7 @@ Ensemble <- R6Class("Ensemble",
                       self$pred_combined <- self$final_ensemble_combine(combine_function)
                       
                     } else {
+
                       # then group all the predictions together
                       self$pred_table <- do.call(cbind.data.frame, self$preds)
                       colnames(self$pred_table) <- sapply(1:self$size, function(a) paste0('ep',a))
