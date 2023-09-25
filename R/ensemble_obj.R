@@ -122,6 +122,7 @@ Ensemble <- R6Class("Ensemble",
                       
                       # sub-sample the data
                       sdat  <- self$sample_data(perc)
+
                       n_classes <- length(unique(sdat[['label']]))
                       
                       dtrain <- xgb.DMatrix(data=sdat[['data']], 
@@ -207,6 +208,8 @@ Ensemble <- R6Class("Ensemble",
                     
                     if (self$name == 'final') { # then we might have have multiclass calls.
                       # combine across member of the ensemble
+                      self$pred_table <- do.call(cbind.data.frame, self$preds)
+                      colnames(self$pred_table) <- sapply(1:self$size, function(a) paste0('ep',a))
                       self$pred_combined <- self$final_ensemble_combine(combine_function)
                       
                     } else {
