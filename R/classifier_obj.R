@@ -609,7 +609,9 @@ Robencla <- R6Class("Robencla",
                       # here the ensemble will be trained on the prior predictions
                       # for each category, get the predictions
                       # turn that into a dataframe / matrix
+                      print('building final ensemble')
                       self$build_pred_table()
+
                       remapped_label <- self$remap_multiclass_labels(self$train_label)
                       #print(head(self$train_label))
                       #print(head(remapped_label))
@@ -618,10 +620,12 @@ Robencla <- R6Class("Robencla",
                       self$ensbl[["final"]] <- Ensemble$new(name="final",
                                                          obj_mode="final",
                                                          size=params$size, 
-                                                         data=self$pred_table,
+                                                         train_data=self$pred_table,
                                                          label=remapped_label, 
                                                          params=params
                                                     )
+
+                      print('finished building final ensemble')
                       return(invisible(self))
                     },
                     
