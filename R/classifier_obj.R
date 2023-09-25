@@ -643,7 +643,8 @@ Robencla <- R6Class("Robencla",
                     
                     ensemble_setup = function(combine_function) {
                       for (li in self$unique_labels) {
-                        self$ensbl[[li]]$member_predict(self$ensbl[[li]]$train_data, combine_function)
+                        self$ensbl[[li]]$member_predict(
+                          as.matrix(self$ensbl[[li]]$train_data), combine_function)
                       }
                       return(invisible(self))
                     },
@@ -654,7 +655,8 @@ Robencla <- R6Class("Robencla",
                         data <- as.matrix(data)
                       }
                       for (li in self$unique_labels) {
-                        self$ensbl[[li]]$member_predict(self$ensbl[[li]]$test_data, combine_function)
+                        self$ensbl[[li]]$member_predict(
+                          as.matrix(self$ensbl[[li]]$test_data), combine_function)
                       }
                       return(invisible(self))
                     },
@@ -668,7 +670,8 @@ Robencla <- R6Class("Robencla",
                       # then we should have a new pred_table from the data
                       pred_matrix <- as.matrix(self$pred_table)
                       
-                      self$ensbl[['final']]$member_predict(pred_matrix, combine_function)
+                      self$ensbl[['final']]$member_predict(
+                        as.matrix(pred_matrix), combine_function)
                       return(invisible(self))
                     },
                     
