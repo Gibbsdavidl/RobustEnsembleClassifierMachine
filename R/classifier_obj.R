@@ -723,6 +723,7 @@ Robencla <- R6Class("Robencla",
                     },
                     
                     
+                    
                     classification_metrics = function(use_cv_results=TRUE, these_calls=NULL, these_labels=NULL) {
                       
                         # there are instances where some classes are not returned
@@ -934,7 +935,7 @@ Robencla <- R6Class("Robencla",
                     
                     
                     # Train a classifier
-                    autotrain = function(data_frame=NULL,
+                    train = function(data_frame=NULL,
                                         data_file=NULL,
                                         sep=NULL,
                                         label_name=NULL,
@@ -985,7 +986,7 @@ Robencla <- R6Class("Robencla",
                     
                     # make predictions on a new data set
                     # after running autotrain()
-                    autotest = function(data_frame=NULL,
+                    predict = function(data_frame=NULL,
                                         data_file=NULL,
                                         sep=NULL,
                                         label_name=NULL,
