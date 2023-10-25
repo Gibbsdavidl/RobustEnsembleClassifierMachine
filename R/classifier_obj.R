@@ -172,11 +172,12 @@ Robencla <- R6Class("Robencla",
                         
                         # or ELSE we're doing cross-validation
                       } else {
-                        #Create 10 equally size folds
+                        #Create N equally size folds
                         folds <- cut(seq(1,nrow(self$data)),breaks=cv_rounds,labels=FALSE)
                         
                         #Segement your data by fold using the which() function 
                         testIndexes <- which(folds==i,arr.ind=TRUE)
+
                         self$train_data <- self$data[-testIndexes, ]
                         self$train_label <- self$label[-testIndexes]
                         self$train_sample_ids <- self$sample_ids[-testIndexes]
@@ -213,10 +214,10 @@ Robencla <- R6Class("Robencla",
                                           data_split=NULL,
                                           verbose=NULL){
                       # First reading it in
-                      self$file_name <- file_name
-                      self$data_mode <- data_mode
+                      self$file_name  <- file_name
+                      self$data_mode  <- data_mode
                       self$signatures <- signatures
-                      self$pair_list <- pair_list
+                      self$pair_list  <- pair_list
                       self$data_split <- data_split
                       self$label_name <- label_name
                       self$verbose <- verbose
@@ -880,16 +881,16 @@ Robencla <- R6Class("Robencla",
                       self$combine_function=combine_function
                       
                       # perform the data set up
-                      self$data_setup( data_frame=data_frame,
-                                     file_name=data_file,
-                                     sep=sep,
-                                     data_mode=data_mode,
-                                     signatures=signatures,
-                                     pair_list=pair_list,
-                                     label_name=label_name, 
-                                     sample_id=sample_id,
-                                     drop_list=drop_list,
-                                     verbose=verbose)
+                      self$data_setup(data_frame=data_frame,
+                                      file_name=data_file,
+                                      sep=sep,
+                                      data_mode=data_mode,
+                                      signatures=signatures,
+                                      pair_list=pair_list,
+                                      label_name=label_name, 
+                                      sample_id=sample_id,
+                                      drop_list=drop_list,
+                                      verbose=verbose)
 
                       self$op_mode <- 'train'
                       
@@ -917,7 +918,7 @@ Robencla <- R6Class("Robencla",
                         self$train_final(params$train_perc)
                         
                         # and finally, make a prediction on some training data.
-                        self$predict(self$test_data, params$combine_function)
+                        self$final_predict(self$test_data, params$combine_function)
                         
                         # capture the feature importance from each fold
                         self$cv_importance[[cvi]] <- self$importance()
