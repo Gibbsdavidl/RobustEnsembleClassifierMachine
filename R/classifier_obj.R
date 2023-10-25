@@ -669,7 +669,7 @@ Robencla <- R6Class("Robencla",
                     
                     
                     # predict final uses predictions from predict_ensemble
-                    predict = function(data, combine_function) {
+                    final_predict = function(data, combine_function) {
                       self$ensemble_predict(data, combine_function)
                       self$build_pred_table()
 
@@ -1002,7 +1002,7 @@ Robencla <- R6Class("Robencla",
                                       drop_list=drop_list,
                                       verbose = verbose)
                       
-                      self$predict(self$test_data, self$final_params$combine_function)
+                      self$final_predict(self$test_data, self$final_params$combine_function)
                   
                       return(invisible(self)) 
                     }
