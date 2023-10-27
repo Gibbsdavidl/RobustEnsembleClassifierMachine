@@ -8,6 +8,9 @@
 
 ## second example: train and test on separate files.
 
+# NEW FEATURE: pair_list can take a named list, where names are label names.
+#   this is to provide a pair list per class.
+
 ```
 devtools::install_github("gibbsdavidl/robencla")
 
@@ -31,9 +34,9 @@ params <- list(
                nrounds=24,     # number of rounds of training, lower numbers less overfitting (potentially)  (xgboost parameter)
                early_stopping_rounds=2, # number of rounds without improvment stops the training (xgboost early_stopping_rounds)
                nthreads=4,     # parallel threads
-               gamma=1,        # Minimum loss reduction required to again partition a leaf node. higher number ~ more conservative (xgboost parameter)
-               lambda=1.5,     # L2 regularization term on weights, higher number ~ more conservative (xgboost parameter)
-               alpha=0.5,      # L1 regularization term on weights. higher number ~ more conservative (xgboost parameter)
+               gamma=0.0,      # Minimum loss reduction required to again partition a leaf node. higher number ~ more conservative (xgboost parameter)
+               lambda=1.0,     # L2 regularization term on weights, higher number ~ more conservative (xgboost parameter)
+               alpha=0.0,      # L1 regularization term on weights. higher number ~ more conservative (xgboost parameter)
                size=11,        # Size of the ensemble, per binary prediction 
                train_perc=0.5, # The percentage of data used to train each ensemble member.
                combine_function='median'  # How the ensemble should be combined. Only median currently.
@@ -123,10 +126,11 @@ params <- list(
                max_depth=6,    # "height" of the tree, 6 is actually default. I think about 12 seems better.  (xgboost parameter)
                eta=0.2,        # this is the learning rate. smaller values slow it down, more conservative   (xgboost parameter)
                nrounds=24,     # number of rounds of training, lower numbers less overfitting (potentially)  (xgboost parameter)
+               early_stopping_rounds=2, # number of rounds without improvment stops the training (xgboost early_stopping_rounds)
                nthreads=4,     # parallel threads
-               gamma=1,        # Minimum loss reduction required to again partition a leaf node. higher number ~ more conservative (xgboost parameter)
-               lambda=1.5,     # L2 regularization term on weights, higher number ~ more conservative (xgboost parameter)
-               alpha=0.5,      # L1 regularization term on weights. higher number ~ more conservative (xgboost parameter)
+               gamma=0.0,        # Minimum loss reduction required to again partition a leaf node. higher number ~ more conservative (xgboost parameter)
+               lambda=1.0,     # L2 regularization term on weights, higher number ~ more conservative (xgboost parameter)
+               alpha=0.0,      # L1 regularization term on weights. higher number ~ more conservative (xgboost parameter)
                size=11,        # Size of the ensemble, per binary prediction 
                train_perc=0.5, # The percentage of data used to train each ensemble member.
                combine_function='median'  # How the ensemble should be combined. Only median currently.
@@ -134,7 +138,7 @@ params <- list(
                ###More on the xgboost parameters: https://xgboost.readthedocs.io/en/latest/parameter.html
 
 # First we use the training data
-anne$autotrain(data_frame=data.table::fread('data/bcp_train_data.csv', sep=',', header=T),
+anne$train (data_frame=data.table::fread('data/bcp_train_data.csv', sep=',', header=T),
                # !!! OR !!! leave data_frame=NULL, and pass in a file name for the data to use for training
                # data_file='data/bcp_train_data.csv', # subset of data/Breast Cancer Prediction.csv',
                label_name='Class',
@@ -145,7 +149,7 @@ anne$autotrain(data_frame=data.table::fread('data/bcp_train_data.csv', sep=',', 
                params=params)
               
 # now we apply the classifier to a test set.
-anne$autotest(
+anne$predict(
               data_frame=data.table::fread('data/bcp_test_data.csv', sep=',', header=T),
               ### OR ### data_file = 'data/bcp_test_data.csv',
               label_name='Class',
