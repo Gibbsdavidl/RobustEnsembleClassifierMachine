@@ -8,8 +8,7 @@
 
 ## second example: train and test on separate files.
 
-# NEW FEATURE: pair_list can take a named list, where names are label names.
-#   this is to provide a pair list per class.
+# NEW FEATURE: pair_list can take a named list, where names are label names, to give a pair-list per class.
 
 ```
 devtools::install_github("gibbsdavidl/robencla")
