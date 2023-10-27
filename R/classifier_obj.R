@@ -896,7 +896,7 @@ Robencla <- R6Class("Robencla",
                       
                       for (cvi in 1:cv_rounds){
                         
-                        print(paste0("*** Training-Testing Round ", cvi, " ***"))
+                        print(paste0("*** CV Round ", cvi, " ***"))
                         
                         # SPLIT DATA round 1
                         self$data_split_fun(data_split, cv_rounds, cvi)
