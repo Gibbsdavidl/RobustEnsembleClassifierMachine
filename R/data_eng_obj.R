@@ -205,7 +205,7 @@ Data_eng <- R6Class("Data_eng",
                           sig_group = c( rep.int('a', length(s1)), rep.int('b', length(s2)))
                           # for each sample si
                           sig_pair_temp <- sapply(1:nrow(data), function(si) {
-                            val_group <- c( as.numeric(data[si,s1]), as.numeric(data[si,s2]) )
+                            val_group <- c( as.numeric(data[si,.SD,.SD=s1]), as.numeric(data[si,.SD,.SD=s2]) )
                             roc_obj <- ROCit::rocit(val_group, sig_group)
                             roc_obj$AUC
                           }) 
