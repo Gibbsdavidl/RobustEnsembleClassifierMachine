@@ -186,31 +186,32 @@ Data_eng <- R6Class("Data_eng",
                       if (is.null(self$signatures)) {
                         stop("Signatures is null in data eng obj. Please include signatures.")
                       }
+                      # list of the new columns added to the data
                       newcol_names <- c()
+                      # the new data frame we're building
                       newcol_dat <- list()
+                      # names of the signatures
                       sig_names <- names(self$signatures)
+                      # for each pair of sig_names
                       for (ci in 1:(length(sig_names)-1)) {
                         for (cj in (ci+1):length(sig_names)) {
-                          # Now we are looking at a pair of signatures
+                          # fix the names and get the features
                           sn1 <- sig_names[ci]
                           sn2 <- sig_names[cj]
                           s1 <- gsub(' ', '_', self$signatures[[sn1]])
                           s2 <- gsub(' ', '_', self$signatures[[sn2]])
                           sig_pair_temp <- list()
-                          # for each pair, look at each pair of genes, record gt or lt
-                          for (sx1 in s1) {
-                            for (sx2 in s2) {
-                              res0 <- as.numeric(data[,.SD,.SDcols=sx1] > data[,.SD,.SDcols=sx2])
-                              sig_pair_temp[[paste0(sx1,sx2,collapse = '_X_')]] <- res0
-                            }
-                          }
-                          # first we make a df
-                          resdf <- data.frame(sig_pair_temp)
-                          findf <- apply(resdf, 1, sum, na.rm=T) / ncol(resdf)
-                          #
+                          # each sig is a group to get AUC
+                          sig_group = c( rep.int('a', length(s1)), rep.int('b', length(s2)))
+                          # for each sample si
+                          sig_pair_temp <- sapply(1:nrow(data), function(si) {
+                            val_group <- c( as.numeric(dat[si,s1]), as.numeric(dat[si,s2]) )
+                            roc_obj <- ROCit::rocit(val_group, sig_group)
+                            roc_obj$AUC
+                          }) 
                           this_new_col <- paste0(sig_names[ci],'_X_', sig_names[cj])
                           newcol_names <- c(newcol_names, this_new_col)
-                          newcol_dat[[this_new_col]] <- findf
+                          newcol_dat[[this_new_col]] <- as.numeric(sig_pair_temp)
                         }
                       }
                       sigpairs_dat <- data.table(data.frame(newcol_dat))

@@ -104,6 +104,13 @@ Robencla <- R6Class("Robencla",
                       #self$greet()
                     },
                     
+                    #' @description
+                    #' Returns the robencla version.
+                    #' @return A character string representing the package version.
+                    version = function() {
+                      return("0.3.3")
+                    },
+                    
                     
                     #' @description
                     #' Creates a printable representation of the object.
@@ -725,7 +732,18 @@ Robencla <- R6Class("Robencla",
                     
                     
                     
-                    classification_metrics = function(use_cv_results=TRUE, these_calls=NULL, these_labels=NULL) {
+                    #' @description 
+                    #' Returns a table of classification metrics, one row per label.
+                    #' @param these_labels vector, the classification labels.
+                    #' @param these_calls vector, the predicted calls.
+                    #' @param use_cv_results boolean, use the cross validation results or internal test set
+                    #'
+                    #' @details Returns various metrics associated with machine learning performance.
+                    #'
+                    #' @return A table of classification metrics for each label and overall.
+                    #'
+                    #'
+                    classification_metrics = function(these_labels=NULL, these_calls=NULL, use_cv_results=TRUE ) {
                       
                         # there are instances where some classes are not returned
                         # in the BestCalls, those can cause numeric(0) in sens, spec, etc.
@@ -741,8 +759,7 @@ Robencla <- R6Class("Robencla",
                           calls <- self$cv_results$BestCalls
                           labels <- self$cv_results$Label
                         } 
-                       
-                        if ( (!is.null(these_calls)) && (!is.null(these_labels)) ) {
+                        else if ( (!is.null(these_calls)) && (!is.null(these_labels)) ) {
                           labels <- these_labels
                           calls <- these_calls
                         } else {
