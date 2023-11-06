@@ -7,6 +7,8 @@ library(robencla)
 
 mod <- Robencla$new("Test3")
 
+mod$version()
+
 # list of signatures to compare
 sigs = list(Sig1=c('Uniformity of Cell Shape','Uniformity of Cell Size', 'Marginal Adhesion'), 
             Sig2=c('Bare Nuclei', 'Normal Nucleoli', 'Single Epithelial Cell Size'),
