@@ -431,6 +431,8 @@ Robencla <- R6Class("Robencla",
                                                drop_list=NULL,
                                                verbose=NULL){
                       
+                      allgenes <- c(unlist(self$pair_list), unlist(self$signatures))
+                      
                       if (!is.null(file_name)) {
                         if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
                           sep = ','
@@ -491,7 +493,7 @@ Robencla <- R6Class("Robencla",
                       }
                       
                       # check that the data column names are the same as used in training
-                      if (!all(colnames(self$test_data) %in% self$data_colnames)) {
+                      if (! all(allgenes %in% colnames(self$test_data)) ) {
                         stop('Test data column names must match what was used in training.')
                       } else {
                         # just subset to the proper columns now

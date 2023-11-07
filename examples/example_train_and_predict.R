@@ -53,8 +53,11 @@ mod$predict(data_file='examples/data/bcp_test_data.csv',
 # print the test data results table
 mod$results(include_label = T) %>% head() %>% print()
 
+# get a confusion matrix
+table(Label=mod$test_label, Pred=mod$results(include_label = T)$BestCalls)
+
 # metrics on the test set predictions
-mod$classification_metrics() %>% print()
+mod$classification_metrics(use_cv_results = F) %>% print()
 
 # and get the importance of features in each ensemble member
 mod$importance() %>% print()

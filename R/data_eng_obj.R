@@ -82,7 +82,7 @@ Data_eng <- R6Class("Data_eng",
                     rankdat <- NULL
                     pairdat <- NULL
                     newdat <- data.table()
-                    allgenes <- c(self$pair_list, unlist(self$signatures))
+                    allgenes <- c(unlist(self$pair_list), unlist(self$signatures))
                     datcols <- colnames(data)
                     
                     if ('original' %in% self$data_mode) {
