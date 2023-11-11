@@ -108,7 +108,7 @@ Robencla <- R6Class("Robencla",
                     #' Returns the robencla version.
                     #' @return A character string representing the package version.
                     version = function() {
-                      return("0.3.3")
+                      return("0.3.4")
                     },
                     
                     
@@ -369,7 +369,7 @@ Robencla <- R6Class("Robencla",
                           label_name <- gsub(' ', '_', label_name)
                           self$train_label <- sapply(self$train_data[[label_name]], as.character)
                           #set(self$train_data, j = label_name, value = NULL)
-                          self$train_data[, ..label_name := NULL]
+                          #self$train_data[, ..label_name := NULL]
                         }
                       }
                       
@@ -378,7 +378,7 @@ Robencla <- R6Class("Robencla",
                         self$sample_id <- gsub(' ', '_', sample_id)
                         self$train_sample_ids <- sapply(self$train_data[[self$sample_id]], as.character)
                         #set(self$train_data, j = self$sample_id, value = NULL)  # then del it
-                        self$train_data[, ..sample_id := NULL]
+                        #self$train_data[, ..sample_id := NULL]
                       } else {
                         self$train_sample_ids <- 1:nrow(self$train_data)
                       }
@@ -387,7 +387,7 @@ Robencla <- R6Class("Robencla",
                       if ((!is.null(drop_list)) && all(sapply(drop_list, function(a) a %in%  colnames(self$train_data)))) {
                         drop_list <- gsub(' ', '_', drop_list)
                         #set(self$train_data, j = drop_list, value = NULL)
-                        self$train_data[, ..drop_list := NULL]
+                        #self$train_data[, ..drop_list := NULL]
                       } else if ((!is.null(drop_list))) {
                         stop('Make sure the drop_list contains column names found in the data!')
                       }
@@ -471,7 +471,7 @@ Robencla <- R6Class("Robencla",
                           label_name <- gsub(' ', '_', label_name)
                           self$test_label <- sapply(self$test_data[[label_name]], as.character)
                           #set(self$test_data, j = label_name, value = NULL)
-                          self$test_data[, ..label_name := NULL]
+                          #self$test_data[, ..label_name := NULL]
                         }
                       }
                       
@@ -480,7 +480,7 @@ Robencla <- R6Class("Robencla",
                         test_sample_id <- gsub(' ', '_', sample_id)
                         self$test_sample_ids <- sapply(self$test_data[[test_sample_id]], as.character)
                         #set(self$test_data, j = test_sample_id, value = NULL)  # then del it
-                        self$test_data[, ..sample_id:=NULL]
+                        #self$test_data[, ..sample_id:=NULL]
                       } else {
                         self$test_sample_ids <- 1:nrow(self$test_data)
                       }
@@ -489,14 +489,14 @@ Robencla <- R6Class("Robencla",
                       if ((!is.null(drop_list)) && all(sapply(drop_list, function(a) a %in% colnames(self$test_data)))) {
                         drop_list <- gsub(' ', '_', drop_list)
                         #set(self$test_data, j = drop_list, value = NULL)
-                        self$test_data[, ..drop_list := NULL]
+                        #self$test_data[, ..drop_list := NULL]
                       } else if ((!is.null(drop_list))) {
                         stop('Make sure the drop_list contains column names found in the data!')
                       }
                       
                       if ( (self$label_name %in% colnames(self$test_data)) ) {
                         #set(self$test_data, j = self$label_name, value = NULL)
-                        self$test_data[, ..label_name := NULL]
+                        #self$test_data[, ..label_name := NULL]
                       }
                       
                       # check that the data column names are the same as used in training
