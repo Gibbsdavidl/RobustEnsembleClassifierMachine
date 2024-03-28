@@ -679,7 +679,8 @@ Robencla <- R6Class("Robencla",
                         self$ensbl[[li]]$test_data <- data # can't be matrix until after data eng
                         self$ensbl[[li]]$data_eng('test')
                         self$ensbl[[li]]$member_predict(
-                        self$ensbl[[li]]$test_data, combine_function)
+                          self$ensbl[[li]]$test_data, combine_function
+                          )
                       }
                       return(invisible(self))
                     },
@@ -1000,8 +1001,7 @@ Robencla <- R6Class("Robencla",
                       # training and making predictions on the training data
                       self$build_label_ensemble(params=params)$
                         train_models(params$train_perc)$
-                        ensemble_setup(params$combine_function)
-
+                        ensemble_setup(params$combine_function)  ## not ensemble_predict?
                       
                       # then we build the output layer, trained on the predictions of the first layer
                       self$build_final_ensemble(final_params)$
