@@ -1,7 +1,8 @@
 
 
 
-# Example using the autopred (auto-prediction) function.
+# Example where most informative feature in training data is not 
+# present in the test set.
 
 install.packages('~/Code/robencla', repos = NULL, type = 'source')
 
@@ -11,13 +12,8 @@ mod <- Robencla$new("Test3")
 
 mod$version()
 
-# list of signatures to compare
-sigs = list(Sig1=c('Uniformity of Cell Shape','Uniformity of Cell Size', 'Marginal Adhesion'), 
-            Sig2=c('Bare Nuclei', 'Normal Nucleoli', 'Single Epithelial Cell Size'),
-            Sig3=c('Bland Chromatin', 'Mitoses'))
-
 # only pair these features
-my_pairs <- c('Clump Thickness','Uniformity of Cell Size','Uniformity of Cell Shape','Marginal Adhesion')
+my_pairs <- sapply(1:24, function(i) paste0('X',i))
 
 # xgboost parameters
 params <- list(
@@ -31,26 +27,25 @@ params <- list(
   alpha=0.0,      # L1 regularization term on weights. higher number ~ more conservative (xgboost parameter)
   size=11,        # Size of the ensemble, per binary prediction 
   sample_prop=0.8, # The percentage of data used to train each ensemble member.
-  feature_prop=0.6, 
+  feature_prop=0.5, # The percentage of data used to train each ensemble member.
+  subsample=0.76,
   combine_function='median',  # How the ensemble should be combined. Only median currently.
   verbose=0)
 
 
 # split the data, train and test
-mod$train(data_file='examples/data/bcp_train_data.csv',
-              label_name='Class',
-              sample_id = 'Sample code number',
-              data_mode=c('allpairs', 'sigpairs'), # allpairs, pairs, sigpairs,quartiles,tertiles,binary,ranks,original
-              pair_list=my_pairs,
-              signatures=sigs,
-              params=params)
+mod$train(data_file='examples/data/missing_informative_train_data.csv',
+          label_name='label',
+          sample_id = NULL,
+          data_mode=c('allpairs'), # allpairs, pairs, sigpairs,quartiles,tertiles,binary,ranks,original
+          pair_list=my_pairs,
+          signatures=NULL,
+          params=params)
 
 
-mod$predict(data_file='examples/data/bcp_test_data.csv',
-              label_name='Class',
-              sample_id = 'Sample code number',
-              )
-
+mod$predict(data_file='examples/data/missing_informative_test_data.csv',
+            label_name='label'
+)
 
 
 # print the test data results table
@@ -69,3 +64,11 @@ mod$importance() %>% print()
 ## IF THE ROC IS UPSIDE DOWN, SET FLIP=T
 ensemble_rocs(mod, flip=F) # uses the last fold trained.
 
+# 
+# $label_2
+# # A tibble: 264 × 4
+# Feature   MedGain MedCover MedFreq
+# <chr>       <dbl>    <dbl>   <dbl>
+#   1 X7_X_X8    0.273    0.204  0.0412 
+# 2 X8_X_X9    0.0869   0.0674 0.0178 
+# 3 X9_X_X10   0.0659   0.0498 0.0407 
