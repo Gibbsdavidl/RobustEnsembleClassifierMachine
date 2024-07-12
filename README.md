@@ -1,14 +1,11 @@
 
-
 # robencla the rob(ust) en(semble) cla(ssifier)
 
-## Transforms data into robust forms and trains an ensemble of XGboost classifiers.
+### Robust feature engineering transforms data and trains an ensemble of XGboost classifiers.
 
-## First example: cross validation, 
+Below, the first example demonstrates cross validation, and the second example shows how to train and test on separate files.
 
-## second example: train and test on separate files.
-
-# NEW FEATURE: pair_list can take a named list, where names are label names, to give a pair-list per class.
+## Cross Validation 
 
 ```
 devtools::install_github("gibbsdavidl/robencla")
@@ -101,7 +98,7 @@ ensemble_rocs(anne)
 ```
 
 
-Now, training and testing on separate files.
+## Second, training and testing on separate files.
 
 
 ```
