@@ -10,6 +10,8 @@
 
 # NEW FEATURE: pair_list can take a named list, where names are label names, to give a pair-list per class.
 
+Naming feature-pairs per label often works better than taking all pairs of features.
+
 ```
 devtools::install_github("gibbsdavidl/robencla")
 
