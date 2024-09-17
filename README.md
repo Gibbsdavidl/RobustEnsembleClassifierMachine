@@ -1,14 +1,11 @@
 
-
 # robencla the rob(ust) en(semble) cla(ssifier)
 
-## Transforms data into robust forms and trains an ensemble of XGboost classifiers.
+### Robust feature engineering transforms data and trains an ensemble of XGboost classifiers.
 
-## First example: cross validation, 
+Below, the first example demonstrates cross validation, and the second example shows how to train and test on separate files.
 
-## second example: train and test on separate files.
-
-# NEW FEATURE: pair_list can take a named list, where names are label names, to give a pair-list per class.
+## Cross Validation 
 
 Naming feature-pairs per label often works better than taking all pairs of features.
 
@@ -18,7 +15,7 @@ devtools::install_github("gibbsdavidl/robencla")
 library(robencla)
 
 # Our classifier object named Anne.  Hi Anne!
-anne <- Robencla$new("Anne")
+mod1 <- Robencla$new("cell_model")
 
 # Defining the list of signatures to compute signature-pairs, must be composed of column names
 sigs = list(Sig1=c('Uniformity of Cell Shape','Uniformity of Cell Size', 'Marginal Adhesion'), 
@@ -46,7 +43,7 @@ params <- list(
 
 # CROSS VALIDATION:  split the data, train and test, repeat over folds, all samples get a prediction.
 
-anne$autocv(
+mod1$autocv(
 
   # The data to use for training
   data_frame=data.table::fread('data/bcp_train_data.csv', sep=',', header=T),
@@ -82,28 +79,28 @@ anne$autocv(
 # If using cross validation, the table will have an 
 # entry for each sample, otherwise only for the test set.
 print(
-  df <- anne$cv_results
+  df <- mod1$cv_results
   table(True=df$Label, Call=df$BestCalls)
   )
 
 # Prediction metrics on the test set predictions
 print(
-  anne$classification_metrics()
+  mod1$classification_metrics()
   )
 
 # Get the importance of features in each ensemble member
 # these are found by combining the importance measures across the ensemble
 print(
-  anne$importance()
+  mod1$importance()
 )
 
 # Plot the ROC curves for each class
-ensemble_rocs(anne)
+ensemble_rocs(mod1)
 
 ```
 
 
-Now, training and testing on separate files.
+## Second, training and testing on separate files.
 
 
 ```
@@ -112,7 +109,7 @@ devtools::install_github("gibbsdavidl/robencla")
 library(robencla)
 
 # Our classifier object named Anne.  Hi Anne!
-anne <- Robencla$new("Anne")
+mod2 <- Robencla$new("train_test")
 
 # Defining the list of signatures to compute signature-pairs, must be composed of column names
 sigs = list(Sig1=c('Uniformity of Cell Shape','Uniformity of Cell Size', 'Marginal Adhesion'), 
@@ -139,7 +136,7 @@ params <- list(
                ###More on the xgboost parameters: https://xgboost.readthedocs.io/en/latest/parameter.html
 
 # First we use the training data
-anne$train (data_frame=data.table::fread('data/bcp_train_data.csv', sep=',', header=T),
+mod2$train (data_frame=data.table::fread('data/bcp_train_data.csv', sep=',', header=T),
                # !!! OR !!! leave data_frame=NULL, and pass in a file name for the data to use for training
                # data_file='data/bcp_train_data.csv', # subset of data/Breast Cancer Prediction.csv',
                label_name='Class',
@@ -150,14 +147,14 @@ anne$train (data_frame=data.table::fread('data/bcp_train_data.csv', sep=',', hea
                params=params)
               
 # now we apply the classifier to a test set.
-anne$predict(
+mod2$predict(
               data_frame=data.table::fread('data/bcp_test_data.csv', sep=',', header=T),
               ### OR ### data_file = 'data/bcp_test_data.csv',
               label_name='Class',
               sample_id = 'Sample code number')
 
 
-df <- anne$results(include_label = T)
+df <- mod2$results(include_label = T)
 
 # create a confusion matrix
 print(
@@ -166,17 +163,17 @@ print(
 
 # Prediction metrics on the test set predictions
 print(
-  anne$classification_metrics(use_cv_results = F) # does not use CV results
+  mod2$classification_metrics(use_cv_results = F) # does not use CV results
 )
 
 # Get the importance of features in each ensemble member
 # these are found by combining the importance measures across the ensemble
 print(
-  anne$importance()
+  mod2$importance()
 )
 
 # Plot the ROC curves for each class
-ensemble_rocs(anne, flip=F)  ### Flip it if the binary labels are "upside down".
+ensemble_rocs(mod2, flip=F)  ### Flip it if the binary labels are "upside down".
 
 ```
 

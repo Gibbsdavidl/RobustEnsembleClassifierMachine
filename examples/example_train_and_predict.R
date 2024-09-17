@@ -3,6 +3,8 @@
 
 # Example using the autopred (auto-prediction) function.
 
+install.packages('~/Code/robencla', repos = NULL, type = 'source')
+
 library(robencla)
 
 mod <- Robencla$new("Test3")
@@ -28,7 +30,8 @@ params <- list(
   lambda=1.0,     # L2 regularization term on weights, higher number ~ more conservative (xgboost parameter)
   alpha=0.0,      # L1 regularization term on weights. higher number ~ more conservative (xgboost parameter)
   size=11,        # Size of the ensemble, per binary prediction 
-  train_perc=0.8, # The percentage of data used to train each ensemble member.
+  sample_prop=0.8, # The percentage of data used to train each ensemble member.
+  feature_prop=0.6, 
   combine_function='median',  # How the ensemble should be combined. Only median currently.
   verbose=0)
 

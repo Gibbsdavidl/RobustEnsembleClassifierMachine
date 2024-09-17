@@ -54,9 +54,15 @@ Robencla <- R6Class("Robencla",
                     #' @field cv_rounds the number of cross-validation rounds, values greater than 1 overrides data_split.
                     cv_rounds=1,
                     
-                    #' @field data_split numeric value indicating percent data to make into training data
-                    data_split = NULL,
+                    #' @field sample_prop numeric value indicating proportion of samples for each ensemble member
+                    sample_prop = NULL,
                     
+                    #' @field feature_prop numeric value indicating proportion of features to each ensemble member
+                    feature_prop = NULL,
+
+                    #' @field data_split numeric value indicating proportion of features to each ensemble member
+                    data_split = NULL,
+                                        
                     #' @field train_data the data.table used to train the ensemble
                     train_data = NULL,
                     
@@ -72,16 +78,16 @@ Robencla <- R6Class("Robencla",
                     #' @field data_colnames the column names used to train the models 
                     data_colnames = NULL,
                     
-                    #' @field  unique_labels the unique set of labels
+                    #' @field unique_labels the unique set of labels
                     unique_labels = NULL,
                     
-                    #' @field the ensemble of predictors
+                    #' @field ensbl the ensemble of predictors
                     ensbl = list(),
                     
-                    #' @field the table of predictions, collecting from the ensbl list of predictors
+                    #' @field call_table the table of predictions, collecting from the ensbl list of predictors
                     call_table = NULL,
                     
-                    #' @field the table of predictions, collecting from the ensbl list of predictors
+                    #' @field pred_table the table of predictions, collecting from the ensbl list of predictors
                     pred_table = NULL,
                     
                     #' @field cv_results the table of results over all samples.
@@ -108,7 +114,7 @@ Robencla <- R6Class("Robencla",
                     #' Returns the robencla version.
                     #' @return A character string representing the package version.
                     version = function() {
-                      return("0.3.4")
+                      return("0.5.0")
                     },
                     
                     
@@ -434,7 +440,7 @@ Robencla <- R6Class("Robencla",
                                                drop_list=NULL,
                                                verbose=NULL){
                       
-                      allgenes <- c(unlist(self$pair_list), unlist(self$signatures))
+                      allgenes <- gsub(" ", "_", c(unlist(self$pair_list), unlist(self$signatures)))
                       
                       if (!is.null(file_name)) {
                         if (is.null(sep) & stringr::str_detect(file_name, '.csv')) {
@@ -621,7 +627,6 @@ Robencla <- R6Class("Robencla",
                     },
                     
                     
-                    
                     build_final_ensemble = function(params) {
                       # here the ensemble will be trained on the prior predictions
                       # for each category, get the predictions
@@ -650,17 +655,16 @@ Robencla <- R6Class("Robencla",
                     },
                     
                     
-                    
-                    train_models = function(perc) {
+                    train_models = function() {
                       for (li in self$unique_labels) {
-                        self$ensbl[[li]]$train_models(perc)
+                        self$ensbl[[li]]$train_models()
                       }
                       return(invisible(self))
                     },
                     
                     
-                    train_final = function(perc) {
-                      self$ensbl[['final']]$train_models(perc)
+                    train_final = function() {
+                      self$ensbl[['final']]$train_models()
                       return(invisible(self))
                     },
                     
@@ -668,7 +672,7 @@ Robencla <- R6Class("Robencla",
                     ensemble_setup = function(combine_function) {
                       for (li in self$unique_labels) {
                         self$ensbl[[li]]$member_predict(
-                          as.matrix(self$ensbl[[li]]$train_data), combine_function)
+                          as.matrix(self$ensbl[[li]]$train_data))
                       }
                       return(invisible(self))
                     },
@@ -678,9 +682,7 @@ Robencla <- R6Class("Robencla",
                       for (li in self$unique_labels) {
                         self$ensbl[[li]]$test_data <- data # can't be matrix until after data eng
                         self$ensbl[[li]]$data_eng('test')
-                        self$ensbl[[li]]$member_predict(
-                          self$ensbl[[li]]$test_data, combine_function
-                          )
+                        self$ensbl[[li]]$member_predict(self$ensbl[[li]]$test_data)
                       }
                       return(invisible(self))
                     },
@@ -694,8 +696,7 @@ Robencla <- R6Class("Robencla",
                       # then we should have a new pred_table from the data
                       pred_matrix <- as.matrix(self$pred_table)
                       
-                      self$ensbl[['final']]$member_predict(
-                        as.matrix(pred_matrix), combine_function)
+                      self$ensbl[['final']]$member_predict(as.matrix(pred_matrix))
                       return(invisible(self))
                     },
                     
@@ -890,12 +891,10 @@ Robencla <- R6Class("Robencla",
                                         sample_id=NULL,
                                         drop_list=NULL,
                                         cv_rounds=1,
-                                        data_split=NULL,
                                         data_mode=NULL,
                                         signatures=NULL,
                                         pair_list=NULL,
                                         params=NULL,
-                                        combine_function=NULL,
                                         verbose=NULL
                                       ) {
                       
@@ -905,7 +904,7 @@ Robencla <- R6Class("Robencla",
                       final_params[['objective']] <- 'multi:softmax'
                       final_params[['eval_metric']] <- 'mlogloss'
                       
-                      self$combine_function=combine_function
+                      self$combine_function=params$combine_function
                       
                       # perform the data set up
                       self$data_setup(data_frame=data_frame,
@@ -926,33 +925,33 @@ Robencla <- R6Class("Robencla",
                         print(paste0("*** CV Round ", cvi, " ***"))
                         
                         # SPLIT DATA round 1
-                        self$data_split_fun(data_split, cv_rounds, cvi)
+                        self$data_split_fun(params$sample_prop, cv_rounds, cvi)
                         
                         # build the initial set of predictors
                         self$build_label_ensemble(params=params)
                         
                         # and train them using a random selection of data
-                        self$train_models(params$train_perc)
+                        self$train_models()
                         
                         # then make a prediction on the training data
-                        self$ensemble_predict(self$train_data, 
-                                              combine_function = params$combine_function)
+                        self$ensemble_predict(self$train_data)
                         
                         # build the output predictor
                         self$build_final_ensemble(final_params)
                         
                         # and use the earlier training predictions to train the output                      
-                        self$train_final(params$train_perc)
+                        self$train_final()
                         
                         # and finally, make a prediction on some training data.
-                        self$final_predict(self$test_data, params$combine_function)
+                        self$final_predict(self$test_data)
                         
                         # capture the feature importance from each fold
                         self$cv_importance[[cvi]] <- self$importance()
                         
                         # append the final results 
                         if (cvi > 1) {
-                          self$cv_results = rbind(self$cv_results, self$results(include_label = T))
+                          self$cv_results = rbind(self$cv_results, 
+                                                  self$results(include_label = T))
                         } else {
                           self$cv_results = self$results(include_label = T)
                         }
@@ -964,16 +963,16 @@ Robencla <- R6Class("Robencla",
                     
                     # Train a classifier
                     train = function(data_frame=NULL,
-                                        data_file=NULL,
-                                        sep=NULL,
-                                        label_name=NULL,
-                                        sample_id=NULL,
-                                        drop_list=NULL,
-                                        data_mode=NULL,
-                                        signatures=NULL,
-                                        pair_list=NULL,
-                                        params=NULL,
-                                        verbose=NULL
+                                     data_file=NULL,
+                                     sep=NULL,
+                                     label_name=NULL,
+                                     sample_id=NULL,
+                                     drop_list=NULL,
+                                     data_mode=NULL,
+                                     signatures=NULL,
+                                     pair_list=NULL,
+                                     params=NULL,
+                                     verbose=NULL
                     ) {
                       
                       params[['objective']] <- "binary:logistic"
@@ -994,18 +993,18 @@ Robencla <- R6Class("Robencla",
                                             label_name=label_name, 
                                             sample_id=sample_id,
                                             drop_list=drop_list,
-                                            verbose = verbose)
+                                            verbose=verbose)
                       
                       # building the first layer of predictors, each a binary prediction
                       # on one factor in the target labels.
                       # training and making predictions on the training data
                       self$build_label_ensemble(params=params)$
-                        train_models(params$train_perc)$
-                        ensemble_setup(params$combine_function)  ## not ensemble_predict?
+                        train_models()$
+                        ensemble_setup()  ## not ensemble_predict?
                       
                       # then we build the output layer, trained on the predictions of the first layer
                       self$build_final_ensemble(final_params)$
-                        train_final(params$train_perc)
+                        train_final()
                       
                       return(invisible(self))
                     }, # end autotrain
@@ -1029,7 +1028,7 @@ Robencla <- R6Class("Robencla",
                                       drop_list=drop_list,
                                       verbose = verbose)
                       
-                      self$final_predict(self$test_data, self$final_params$combine_function)
+                      self$final_predict(self$test_data)
                   
                       return(invisible(self)) 
                     }
