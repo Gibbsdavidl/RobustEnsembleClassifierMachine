@@ -54,6 +54,6 @@ mod$importance() %>% print()
 
 # plot the ROC curves for each class
 ## IF THE ROC IS UPSIDE DOWN, SET FLIP=T
-ensemble_rocs(mod, flip=F) # uses the last fold trained.
+ensemble_rocs(mod, flip=T) # uses the last fold trained.
 
 

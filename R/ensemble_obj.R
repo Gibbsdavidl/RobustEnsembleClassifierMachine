@@ -179,6 +179,18 @@ Ensemble <- R6Class("Ensemble",
                   
                   ensemble_combine = function() {
                     
+                    # weighted mean
+                    weif <- function(x) {
+                      x <- sort(x, decreasing = T)
+                      xsum <- tanh( sum( sapply(1:length(x), function(a) (1/(a))*x ) ) )
+                      return(xsum)
+                    }
+                    
+                    # majority vote
+                    majv <- function(x) {
+                      sum(x > 0.5)
+                    }
+                    
                     combine_function <- self$combine_function
                     
                     if (combine_function == 'max') {
@@ -189,6 +201,12 @@ Ensemble <- R6Class("Ensemble",
                     }
                     else if (combine_function == 'median') {
                       self$pred_combined <- apply(self$pred_table, 1, median)
+                    }
+                    else if (combine_function == 'majority') {
+                      self$pred_combined <- apply(self$pred_table, 1, majv)
+                    }
+                    else if (combine_function == 'weighted') {
+                      self$pred_combined <- apply(self$pred_table, 1, weif)
                     }
                     else {
                       print('SELECT MAX OR MEAN')
@@ -228,6 +246,7 @@ Ensemble <- R6Class("Ensemble",
                       data <- as.matrix(data)
                     }
                     
+                    # for each ensemble member, make predictions using the feature subset
                     for (i in 1:self$size) {
                       features_samp <- self$bstl[[i]]$feature_names
                       # make the sub sampled data

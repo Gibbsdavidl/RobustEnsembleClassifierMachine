@@ -57,22 +57,22 @@ df["label"] <- labels
 label_1_idx <- which(df$label == 'label_1')
 label_1_sel <- sample(label_1_idx, size = length(label_1_idx)/3, replace = F)
 label_1_non <- sample(label_1_idx, size = length(label_1_idx)/3, replace = F) #setdiff(label_1_idx, label_1_sel)
-df[label_1_sel, 'X3'] <- rnorm(n=length(label_1_sel))
-df[label_1_non, 'X5'] <- rnorm(n=length(label_1_non))
+df[label_1_sel, 'X3'] <- sample(df[label_1_sel, 'X3'], size = length(label_1_sel), replace = F)
+df[label_1_non, 'X5'] <- sample(df[label_1_non, 'X5'], size = length(label_1_non), replace = F)
 
 # label 2 will always have 7&8, but only half and half with have the others, etc
 label_2_idx <- which(df$label == 'label_2')
 label_2_sel <- sample(label_2_idx, size = length(label_2_idx)/3, replace = F)
 label_2_non <- sample(label_2_idx, size = length(label_2_idx)/3, replace = F) # setdiff(label_2_idx, label_2_sel)
-df[label_2_sel, 'X9'] <- rnorm(n=length(label_2_sel))
-df[label_2_non, 'X11'] <- rnorm(n=length(label_2_non))
+df[label_1_sel, 'X9'] <- sample(df[label_1_sel, 'X9'], size = length(label_1_sel), replace = F)
+df[label_1_non, 'X11'] <- sample(df[label_1_non, 'X11'], size = length(label_1_non), replace = F)
 
 # label 1 will always have 1&2, but only half and half with have the others, etc
 label_3_idx <- which(df$label == 'label_3')
 label_3_sel <- sample(label_3_idx, size = length(label_3_idx)/3, replace = F)
 label_3_non <- sample(label_3_idx, size = length(label_3_idx)/3, replace = F) #setdiff(label_3_idx, label_3_sel)
-df[label_3_sel, 'X15'] <- rnorm(n=length(label_3_sel))
-df[label_3_non, 'X17'] <- rnorm(n=length(label_3_non))
+df[label_1_sel, 'X15'] <- sample(df[label_1_sel, 'X15'], size = length(label_1_sel), replace = F)
+df[label_1_non, 'X17'] <- sample(df[label_1_non, 'X17'], size = length(label_1_non), replace = F)
 
 write.csv(df, file='examples/data/missing_informative_train_data.csv', quote = F, row.names = F)
 
