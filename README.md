@@ -32,11 +32,13 @@ params <- list(
                nrounds=24,     # number of rounds of training, lower numbers less overfitting (potentially)  (xgboost parameter)
                early_stopping_rounds=2, # number of rounds without improvment stops the training (xgboost early_stopping_rounds)
                nthreads=4,     # parallel threads
-               gamma=0.0,      # Minimum loss reduction required to again partition a leaf node. higher number ~ more conservative (xgboost parameter)
+               gamma=0.0,      # min loss required to again split a leaf node. higher ~ more conservative (xgboost parameter)
                lambda=1.0,     # L2 regularization term on weights, higher number ~ more conservative (xgboost parameter)
                alpha=0.0,      # L1 regularization term on weights. higher number ~ more conservative (xgboost parameter)
                size=11,        # Size of the ensemble, per binary prediction 
-               train_perc=0.5, # The percentage of data used to train each ensemble member.
+               sample_prop=0.8, # The percentage of data used to train each ensemble member.
+               feature_prop=0.8, # The percentage of data used to train each ensemble member.
+               subsample=0.8,   # the xgboost machines subsample at this rate. 
                combine_function='median'  # How the ensemble should be combined. Only median currently.
                verbose=0)
                ###More on the xgboost parameters: https://xgboost.readthedocs.io/en/latest/parameter.html
@@ -126,11 +128,13 @@ params <- list(
                nrounds=24,     # number of rounds of training, lower numbers less overfitting (potentially)  (xgboost parameter)
                early_stopping_rounds=2, # number of rounds without improvment stops the training (xgboost early_stopping_rounds)
                nthreads=4,     # parallel threads
-               gamma=0.0,        # Minimum loss reduction required to again partition a leaf node. higher number ~ more conservative (xgboost parameter)
+               gamma=0.0,        # min loss required to again split a leaf node. higher ~ more conservative (xgboost parameter)
                lambda=1.0,     # L2 regularization term on weights, higher number ~ more conservative (xgboost parameter)
                alpha=0.0,      # L1 regularization term on weights. higher number ~ more conservative (xgboost parameter)
                size=11,        # Size of the ensemble, per binary prediction 
-               train_perc=0.5, # The percentage of data used to train each ensemble member.
+               sample_prop=0.8, # The percentage of data used to train each ensemble member.
+               feature_prop=0.8, # The percentage of data used to train each ensemble member.
+               subsample=0.8,    # the xgboost machines subsample at this rate. 
                combine_function='median'  # How the ensemble should be combined. Only median currently.
                verbose=0)
                ###More on the xgboost parameters: https://xgboost.readthedocs.io/en/latest/parameter.html
