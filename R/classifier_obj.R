@@ -114,7 +114,7 @@ Robencla <- R6Class("Robencla",
                     #' Returns the robencla version.
                     #' @return A character string representing the package version.
                     version = function() {
-                      return("0.5.0")
+                      return("0.5.1")
                     },
                     
                     
@@ -864,21 +864,23 @@ Robencla <- R6Class("Robencla",
                     
                     results = function(include_label=FALSE) {
                       
-                      # get the calls
+                      # get the calls, labeled numerically as 0 to n labels
                       mapped_calls <- self$ensbl[['final']]$pred_combined
-                      # map calls to the feature names
+                      # map calls to the feature names, the mapped calls are indices to unique labels
                       calls <- self$unmap_multiclass_labels(mapped_calls)
                       # build a data frame with calls and sample ids
                       df <- data.frame(SampleIDs = self$test_sample_ids, BestCalls=calls)
-                      # 
-                      pred_sums <- apply(self$pred_table, 1, sum)
-                      norm_pred_table <- t(sapply(1:nrow(self$pred_table), function(i) self$pred_table[i,] / pred_sums[i]))
+                      # norm each row to add to 1.0
+                      #pred_sums <- apply(self$pred_table, 1, sum)
+                      #norm_pred_table <- t(sapply(1:nrow(self$pred_table), function(i) self$pred_table[i,] / pred_sums[i]))
+                      norm_pred_table <- (self$pred_table) / rowSums(self$pred_table)
+                      # add the labels into the final calls table
                       df <- cbind(df, norm_pred_table)
                       
                       if (!is.null(self$test_label) && include_label == TRUE) {
                         df <- cbind(df, data.frame(Label=self$test_label))
-                        
                       }
+                      
                       return(df)
                     },
                     

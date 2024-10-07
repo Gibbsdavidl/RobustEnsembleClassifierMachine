@@ -4,9 +4,20 @@
 # Example where most informative feature in training data is not 
 # present in the test set.
 
-#install.packages('~/Code/robencla', repos = NULL, type = 'source')
+tmp_lib <- "E:/Work/Code/tmp_lib"
+dir.create(tmp_lib)
+devtools::install_local("E:/Work/Code/robencla/", lib = tmp_lib)
+## restart R
+## explicitly load the affected packages from the temporary library
+library(robencla, lib.loc = tmp_lib)
 
+## OR from github ##
+
+devtools::install_github('gibbsdavidl/robencla',force = T)
 library(robencla)
+
+
+######################################################
 
 mod <- Robencla$new("Test3")
 
@@ -25,16 +36,16 @@ params <- list(
   gamma=0.3,      # Minimum loss reduction  to again partition a leaf node. higher number ~ more conservative 
   lambda=1.3,     # L2 regularization term on weights, higher number ~ more conservative (xgboost parameter)
   alpha=0.3,      # L1 regularization term on weights. higher number ~ more conservative (xgboost parameter)
-  size=11,        # Size of the ensemble, per binary prediction 
+  size=15,        # Size of the ensemble, per binary prediction 
   sample_prop=0.8, # The percentage of data used to train each ensemble member.
   feature_prop=0.8, # The percentage of data used to train each ensemble member.
   subsample=0.8,   # the xgboost machines subsample at this rate. 
-  combine_function='weighted',  # How the ensemble should be combined. Only median currently.
+  combine_function='median',  # How the ensemble should be combined. Only median currently.
   verbose=0)
 
 
 # split the data, train and test
-mod$train(data_file='data/missing_informative_train_data.csv',
+mod$train(data_file='examples/data/missing_informative_train_data.csv',
           label_name='label',
           sample_id = NULL,
           data_mode=c('pairs'), # allpairs, pairs, sigpairs,quartiles,tertiles,binary,ranks,original
@@ -43,7 +54,13 @@ mod$train(data_file='data/missing_informative_train_data.csv',
           params=params)
 
 
-mod$predict(data_file='data/missing_informative_test_data.csv',
+mod$predict(data_file='examples/data/missing_informative_train_data.csv',
+            label_name='label'
+)
+
+
+
+mod$predict(data_file='examples/data/missing_informative_test_data.csv',
             label_name='label'
 )
 
@@ -60,51 +77,25 @@ mod$classification_metrics(use_cv_results = F) %>% print()
 # and get the importance of features in each ensemble member
 mod$importance() %>% print()
 
+
 # plot the ROC curves for each class
 ## IF THE ROC IS UPSIDE DOWN, SET FLIP=T
-ensemble_rocs(mod, flip=F) # uses the last fold trained.
+ensemble_rocs(mod) # uses the last fold trained.
 
-# 
-# $label_2
-# # A tibble: 264 × 4
-# Feature   MedGain MedCover MedFreq
-# <chr>       <dbl>    <dbl>   <dbl>
-# 1 X7_X_X8    0.273    0.204  0.0412 
-# 2 X8_X_X9    0.0869   0.0674 0.0178 
-# 3 X9_X_X10   0.0659   0.0498 0.0407 
-
-library(pheatmap)
-
-idx <- order(mod$test_label)
-l1preds <- mod$ensbl$label_1$pred_table
-labeldf <- data.frame(label=mod$test_label)
-rownames(l1preds) <- sapply(1:500, function(a) paste0('x',a))
-rownames(labeldf) <- sapply(1:500, function(a) paste0('x',a))
-pheatmap(l1preds[idx,], annotation_row = labeldf, cluster_rows = T)
-
-l2preds <- mod$ensbl$label_2$pred_table
-labeldf <- data.frame(label=mod$test_label)
-rownames(l2preds) <- sapply(1:500, function(a) paste0('x',a))
-rownames(labeldf) <- sapply(1:500, function(a) paste0('x',a))
-pheatmap(l2preds, annotation_row = labeldf)
-
-l3preds <- mod$ensbl$label_3$pred_table
-labeldf <- data.frame(label=mod$test_label)
-rownames(l3preds) <- sapply(1:500, function(a) paste0('x',a))
-rownames(labeldf) <- sapply(1:500, function(a) paste0('x',a))
-pheatmap(l3preds, annotation_row = labeldf)
-
-idx <- order(mod$test_label)
-fpreds <- mod$pred_table[idx,]
-labeldf <- data.frame(label=mod$test_label[idx])
-rownames(fpreds) <- sapply(1:500, function(a) paste0('x',a))
-rownames(labeldf) <- sapply(1:500, function(a) paste0('x',a))
-pheatmap(fpreds, annotation_row = labeldf, cluster_rows = F)
+# The final scores
+plot_pred_final(mod)
 
 
+# scores for each label
+plot_pred_heatmap(mod, label = 'label_1',
+                  include_label = T, cluster = T)
 
-mod$ensbl$label_1$bstl[[10]]$feature_names
-mod$ensbl$label_1$bstl[[1]]$feature_names
+plot_pred_heatmap(mod, label = 'label_2',
+                  include_label = T, cluster = T)
+
+plot_pred_heatmap(mod, label = 'label_3',
+                  include_label = T, cluster = T)
+
 
 ### result of applying different combination functions.
 

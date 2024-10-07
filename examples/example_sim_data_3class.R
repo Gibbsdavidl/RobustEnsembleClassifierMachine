@@ -53,3 +53,5 @@ mod$autocv(data_file='examples/data/sim_data_3classes_train.csv',
 print("Across splits")
 mod$classification_metrics() %>% print()
 
+
+plot_pred_heatmap(mod, train_label = 'label_3', test_label = F)
