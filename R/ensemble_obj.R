@@ -209,7 +209,7 @@ Ensemble <- R6Class("Ensemble",
                       self$pred_combined <- apply(self$pred_table, 1, weif)
                     }
                     else {
-                      print('SELECT MAX OR MEAN')
+                      print('SELECT max, mean, median, majority, weighted')
                     }
                   },
                   
