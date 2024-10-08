@@ -66,9 +66,9 @@ Data_eng <- R6Class("Data_eng",
                     self$signatures <- signatures
                     self$pair_list <- pair_list
                     
-                    if (!all(data_mode %in% c('pairs','allpairs','sigpairs','quartiles','tertiles','binary','ranks','original'))) {
+                    if (!all(data_mode %in% c('pairs','allpairs','sigpairs','namedpairs','quartiles','tertiles','binary','ranks','original'))) {
                       print("ERROR:  please choose a valid collection of data modes: ")
-                      print('pairs,allpairs,sigpairs,quartiles,tertiles,binary,ranks,original')
+                      print('pairs,namedpairs,allpairs,sigpairs,quartiles,tertiles,binary,ranks,original')
                       stop(paste0('data_mode, ', self$data_mode  ,' wrong value'))
                     }
                     
@@ -125,7 +125,7 @@ Data_eng <- R6Class("Data_eng",
                       newdat <- cbind(newdat, rankdat)
                     }
                     
-                    if ('pairs' %in% self$data_mode) {
+                    if ('namedpairs' %in% self$data_mode) {
                       # if mode includes 'pairs' then we need to make var-pairs
                       if (is.null(self$pair_list)) {
                         stop('Error: pairlist not found.')
@@ -142,7 +142,7 @@ Data_eng <- R6Class("Data_eng",
                       }
                       newcol_names <- c()
                       newcol_dat <- list()
-                      cols <- self$pair_list 
+                      cols <- self$pair_list_format 
                       for (ci in seq.int(from=1,to=length(self$pair_list),by=2)) {
                           cj <- ci+1
                           res0 <- as.numeric(data[,.SD,.SDcols=cols[ci]] > data[,.SD,.SDcols=cols[cj]])
@@ -217,10 +217,44 @@ Data_eng <- R6Class("Data_eng",
                       sigpairs_dat <- data.table(data.frame(newcol_dat))
                       newdat <- cbind(newdat, sigpairs_dat)
                     }
-                    
-                    return(newdat)
+              
+                    if ('pairs' %in% self$data_mode) {
+                      # if mode includes 'pairs' then we need to make var-pairs
+                      if (is.null(self$pair_list)) {
+                        stop('Error: pairlist not found.')
+                      }
+                      
+                      pair_list_format <- gsub(' ', '_', self$pair_list)
+                      
+                      if (!all(pair_list_format %in% colnames(data))) {
+                        print("ERROR: pair_list must be column names in data.")
+                        print(pair_list_format)
+                        stop(paste0('pair_list contains invalid value'))
+                      }
+                      if (length(self$pair_list) %% 2 != 0) {
+                        print("Pair list must have an even length.")
+                        stop('pair_list has invalid format or length.')
+                      }
+                      
+                      newcol_names <- c()
+                      newcol_dat <- list()
+                      cols <- pair_list_format 
+                      
+                      for (ci in seq.int(from=1,to=(length(cols)-1))) {
+                        for (cj in (ci+1):(length(cols))) {
+                          if (ci != cj) {
+                            res0 <- as.numeric(data[,.SD,.SDcols=cols[ci]] > data[,.SD,.SDcols=cols[cj]])
+                            this_new_col <- paste0(cols[ci],'_X_', cols[cj])
+                            newcol_names <- c(newcol_names, this_new_col)
+                            newcol_dat[[this_new_col]] <- res0
+                          }
+                        }
+                      }
+                      pairdat <- data.table(data.frame(newcol_dat))
+                      newdat <- cbind(newdat, pairdat)
+                    }
                   } # end data_eng
                 ) # end public
 )
                   
-                  
+

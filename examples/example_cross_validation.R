@@ -14,7 +14,11 @@ sigs = list(Sig1=c('Uniformity of Cell Shape','Uniformity of Cell Size', 'Margin
             Sig3=c('Bland Chromatin', 'Mitoses'))
 
 # only pair these features
-features <- c('Clump Thickness','Uniformity of Cell Size','Uniformity of Cell Shape','Marginal Adhesion','Single Epithelial Cell Size','Bare Nuclei','Bland Chromatin','Normal Nucleoli','Mitoses')
+features <- c('Clump Thickness','Uniformity of Cell Size','Uniformity of Cell Shape',
+              'Marginal Adhesion','Single Epithelial Cell Size','Bare Nuclei','Bland Chromatin','Normal Nucleoli','Mitoses')
+
+plist <- list('2'=c('Clump Thickness','Uniformity of Cell Size','Uniformity of Cell Shape','Marginal Adhesion'),
+              '4'=c('Marginal Adhesion','Single Epithelial Cell Size','Bare Nuclei','Bland Chromatin','Normal Nucleoli','Mitoses'))
 
 # xgboost parameters
 params <- list(
@@ -30,7 +34,7 @@ params <- list(
   sample_prop=0.8, # The percentage of data used to train each ensemble member.
   feature_prop=0.8,
   subsample=0.8,
-  combine_function='max',  # How the ensemble should be combined. 
+  combine_function='median',  # How the ensemble should be combined. 
   verbose=0)
 
 # split the data, train and test
@@ -38,9 +42,9 @@ mod$autocv(data_file='examples/data/Breast Cancer Prediction.csv',
              label_name='Class',
              sample_id = 'Sample code number',
              cv_rounds=3,
-             data_mode=c('allpairs', 'sigpairs'), # pairs, allpairs, sigpairs, quartiles, tertiles, binary, ranks, original
-             pair_list=features,
-             signatures=sigs,
+             data_mode=c('namedpairs'), # namedpairs, pairs, allpairs, sigpairs, quartiles, tertiles, binary, ranks, original
+             pair_list=plist, # features
+             signatures=NULL, # sigs
              params=params)
 
 # print the test data results table

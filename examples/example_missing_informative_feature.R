@@ -6,7 +6,7 @@
 
 tmp_lib <- "E:/Work/Code/tmp_lib"
 dir.create(tmp_lib)
-devtools::install_local("E:/Work/Code/robencla/", lib = tmp_lib)
+devtools::install_local("E:/Work/Code/robencla/", lib = tmp_lib, force = T)
 ## restart R
 ## explicitly load the affected packages from the temporary library
 library(robencla, lib.loc = tmp_lib)
