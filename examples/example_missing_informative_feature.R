@@ -13,7 +13,7 @@ library(robencla, lib.loc = tmp_lib)
 
 ## OR from github ##
 
-devtools::install_github('gibbsdavidl/robencla',force = T)
+devtools::install_github('gibbsdavidl/robencla', ref ="allpairs_within", force = T)
 library(robencla)
 
 
@@ -40,7 +40,7 @@ params <- list(
   sample_prop=0.8, # The percentage of data used to train each ensemble member.
   feature_prop=0.8, # The percentage of data used to train each ensemble member.
   subsample=0.8,   # the xgboost machines subsample at this rate. 
-  combine_function='median',  # How the ensemble should be combined. Only median currently.
+  combine_function='majority',  # How the ensemble should be combined. Only median currently.
   verbose=0)
 
 
@@ -48,16 +48,10 @@ params <- list(
 mod$train(data_file='examples/data/missing_informative_train_data.csv',
           label_name='label',
           sample_id = NULL,
-          data_mode=c('pairs'), # allpairs, pairs, sigpairs,quartiles,tertiles,binary,ranks,original
+          data_mode=c('pairs'), # allpairs, pairs, namedpairs, sigpairs, quartiles,tertiles,binary,ranks,original
           pair_list=my_pairs,
           signatures=NULL,
           params=params)
-
-
-mod$predict(data_file='examples/data/missing_informative_train_data.csv',
-            label_name='label'
-)
-
 
 
 mod$predict(data_file='examples/data/missing_informative_test_data.csv',
@@ -78,13 +72,13 @@ mod$classification_metrics(use_cv_results = F) %>% print()
 mod$importance() %>% print()
 
 
+
 # plot the ROC curves for each class
 ## IF THE ROC IS UPSIDE DOWN, SET FLIP=T
 ensemble_rocs(mod) # uses the last fold trained.
 
 # The final scores
 plot_pred_final(mod)
-
 
 # scores for each label
 plot_pred_heatmap(mod, label = 'label_1',

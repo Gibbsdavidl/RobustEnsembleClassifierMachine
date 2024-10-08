@@ -114,7 +114,7 @@ Robencla <- R6Class("Robencla",
                     #' Returns the robencla version.
                     #' @return A character string representing the package version.
                     version = function() {
-                      return("0.5.1")
+                      return("0.5.1expr1")
                     },
                     
                     
