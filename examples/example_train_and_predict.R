@@ -67,5 +67,17 @@ mod$importance() %>% print()
 
 # plot the ROC curves for each class
 ## IF THE ROC IS UPSIDE DOWN, SET FLIP=T
-ensemble_rocs(mod, flip=F) # uses the last fold trained.
+ensemble_rocs(mod) # uses the last fold trained.
+
+# The final scores
+plot_pred_final(mod)
+
+# scores for each label
+plot_pred_heatmap(mod, label = '2',
+                  include_label = T, cluster = T)
+
+plot_pred_heatmap(mod, label = '4',
+                  include_label = T, cluster = T)
+
+
 

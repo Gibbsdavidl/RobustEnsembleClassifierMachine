@@ -23,6 +23,7 @@ Ensemble <- R6Class("Ensemble",
                   feature_prop = NULL,
                   features_samp = NULL,
                   train_data = NULL, # the data to train from
+                  idx = NULL,        # subsetting of the data 
                   test_data = NULL,  # will be filled by test data
                   pair_list = NULL,  # a char vector of genes
                   signatures = NULL, # the list of gene sets
@@ -42,6 +43,7 @@ Ensemble <- R6Class("Ensemble",
                                         size, 
                                         data_mode,
                                         train_data, 
+                                        idx,
                                         pair_list,
                                         signatures,
                                         label, 
@@ -50,11 +52,19 @@ Ensemble <- R6Class("Ensemble",
                     self$obj_mode <- obj_mode
                     self$size <- size
                     self$data_mode <- data_mode
-                    self$train_data <- train_data
+                    
+                    # subset if we're in CV #
+                    if (is.null(idx)) {
+                      self$train_data <- train_data
+                      self$label <- label 
+                    } else {
+                      self$train_data <- train_data[idx,]
+                      self$label <- label[idx] 
+                    }
+                    
                     self$test_data <- NULL
                     self$pair_list <- pair_list
                     self$signatures <- signatures
-                    self$label <- label 
                     self$combine_function <- params[['combine_function']]
                     self$nrounds <- params[['nrounds']]
                     self$early_stopping_rounds <- params[['early_stopping_rounds']]
@@ -90,10 +100,8 @@ Ensemble <- R6Class("Ensemble",
                       self$train_data <- this_deng$data_eng(self$train_data)
                     } else if (data_source == 'test') {
                       self$test_data <- this_deng$data_eng(self$test_data)
-                    } else if (data_source == 'data') {
-                      self$train_data <- this_deng$data_eng(self$train_data)
                     } else {
-                      stop('ERROR: data source must be train, test, or data.')
+                      stop('ERROR: data source must be train, test.')
                     }
                   },
 
@@ -101,7 +109,7 @@ Ensemble <- R6Class("Ensemble",
                   # Each member of the ensemble has a sample of the 
                   # training data, the proportion specified by "perc"
                   # or percentage.
-                  sample_data = function(sample_perc,feature_perc) {
+                  sample_data = function(sample_perc, feature_perc) {
                     
                     # make the data list
                     res0 <- list()
