@@ -156,6 +156,10 @@ Robencla <- R6Class("Robencla",
                     #' @param data_split numeric value, the percent of data to use in training 
                     data_split_fun = function(data_split) {
                       
+                      if (is.null(data_split)) {
+                        stop("Missing sample_prop in params list!")
+                      }
+                      
                         # to split the data into training and test components
                         n <- nrow(self$train_data)
                         idx <- sample.int(n = n, size=data_split*n)
@@ -163,37 +167,6 @@ Robencla <- R6Class("Robencla",
                         self$train_index <- idx
                         self$test_index <- jdx
                         
-                      #   # then create the data sets
-                      #   self$train_data <- self$data[idx,]
-                      #   self$train_label <- self$label[idx]
-                      #   self$train_sample_ids <- self$sample_ids[idx]
-                      #   # 
-                      #   self$test_data <- self$data[jdx,]
-                      #   self$test_label <- self$label[jdx]
-                      #   self$test_sample_ids <- self$sample_ids[jdx]
-                      #   # and record the unique categories in labels 
-                      #   self$unique_labels <- unique(self$train_label)
-                      #   
-                      #   # or ELSE we're doing cross-validation
-                      # } else {
-                      #   #Create N equally size folds
-                      #   folds <- cut(seq(1,nrow(self$data)),breaks=cv_rounds,labels=FALSE)
-                      #   
-                      #   #Segement your data by fold using the which() function 
-                      #   testIndexes <- which(folds==i,arr.ind=TRUE)
-                      # 
-                      #   self$train_data <- self$data[-testIndexes, ]
-                      #   self$train_label <- self$label[-testIndexes]
-                      #   self$train_sample_ids <- self$sample_ids[-testIndexes]
-                      #   
-                      #   self$test_data  <- self$data[testIndexes, ]
-                      #   self$test_label <- self$label[testIndexes]
-                      #   self$test_sample_ids <- self$sample_ids[testIndexes]
-                      #   
-                      #   self$unique_labels <- unique(self$train_label)
-                      # 
-                      # }
-                      # 
                       return()
                     },
                     
@@ -565,7 +538,7 @@ Robencla <- R6Class("Robencla",
                     },
                     
                     
-                    ensemble_predict = function(data, idx) {
+                    ensemble_predict = function(data, idx=NULL) {
                       
                       if (!is.null(idx)) {
                         data <- data[idx,]
@@ -713,19 +686,12 @@ Robencla <- R6Class("Robencla",
                       
                       self$combine_function=params$combine_function
                       
-                      # perform the data set up
-                      self$train_data_setup(data_frame=data_frame,
-                                            file_name=data_file,
-                                            sep=sep,
-                                            data_mode=data_mode,
-                                            signatures=signatures,
-                                            pair_list=pair_list,
-                                            label_name=label_name, 
-                                            sample_id=sample_id,
-                                            drop_list=drop_list,
-                                            verbose=verbose)
-
-                      self$op_mode <- 'train'
+                      if (is.null(data_frame)) {
+                        data_frame <- data.table::fread(file=data_file, sep=sep, header=T)
+                        data_frame <- as.data.frame(data_frame)
+                      }
+                      
+                      self$op_mode <- 'cv'
                       
                       for (cvi in 1:cv_rounds){
                         
@@ -734,28 +700,51 @@ Robencla <- R6Class("Robencla",
                         # SPLIT DATA round 1
                         self$data_split_fun(params$sample_prop) 
                         
-                        # build the initial set of predictors
-                        self$build_label_ensemble(params=params, self$train_index)
+                        data_train_table <- data_frame[self$train_index,]
+                        data_test_table  <- data_frame[self$test_index, ]
                         
-                        # and train them using a random selection of data
-                        self$train_models()
+                        self$train(data_frame=data_train_table,
+                                   data_file=NULL,
+                                   sep,
+                                   label_name,
+                                   sample_id,
+                                   drop_list,
+                                   data_mode,
+                                   signatures,
+                                   pair_list,
+                                   params,
+                                   verbose)
                         
-                        # then make a prediction on the training data
-                        self$ensemble_predict(self$train_data, self$train_index)
+                        self$test(data_frame=data_test_table,
+                                  data_file=NULL,
+                                  sep,
+                                  label_name,
+                                  sample_id,
+                                  drop_list,
+                                  verbose)
                         
-                        # build the output predictor
-                        self$build_final_ensemble(final_params)
-                        
-                        # and use the earlier training predictions to train the output                      
-                        self$train_final()
-                        
-                        # and finally, make a prediction on some training data.
-                        self$test_sample_ids <- self$train_sample_ids[self$test_index]
-                        self$test_label <- self$train_label[self$test_index]
-                        self$final_predict(self$train_data, self$test_index)
+                        # # build the initial set of predictors
+                        # self$build_label_ensemble(params=params, self$train_index)
+                        # 
+                        # # and train them using a random selection of data
+                        # self$train_models()
+                        # 
+                        # # then make a prediction on the training data
+                        # self$ensemble_predict(self$train_data, self$train_index)
+                        # 
+                        # # build the output predictor
+                        # self$build_final_ensemble(final_params)
+                        # 
+                        # # and use the earlier training predictions to train the output                      
+                        # self$train_final()
+                        # 
+                        # # and finally, make a prediction on some training data.
+                        # self$test_sample_ids <- self$train_sample_ids[self$test_index]
+                        # self$test_label      <- self$train_label[self$test_index]
+                        # self$final_predict(self$train_data, self$test_index)
                         
                         # capture the feature importance from each fold
-                        self$cv_importance[[cvi]] <- self$importance()
+                        # self$cv_importance[[cvi]] <- self$importance()
                         
                         # append the final results 
                         if (cvi > 1) {
@@ -829,7 +818,7 @@ Robencla <- R6Class("Robencla",
                                         drop_list=NULL,
                                         verbose=NULL) {
                     
-                      self$test_data_setup( data_frame=data_frame,
+                      self$test_data_setup(data_frame=data_frame,
                                       file_name=data_file, 
                                       sep=sep, 
                                       label_name=label_name, 
