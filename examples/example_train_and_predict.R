@@ -1,7 +1,5 @@
 
-
-
-# Example using the autopred (auto-prediction) function.
+# Example using the train and predict functions.
 
 install.packages('~/Code/robencla', repos = NULL, type = 'source')
 
@@ -54,13 +52,13 @@ mod$predict(data_file='examples/data/bcp_test_data.csv',
 
 
 # print the test data results table
-mod$results(include_label = T) %>% head() %>% print()
+mod$results() %>% head() %>% print()
 
 # get a confusion matrix
-table(Label=mod$test_label, Pred=mod$results(include_label = T)$BestCalls)
+table(Label=mod$test_label, Pred=mod$results()$BestCalls)
 
 # metrics on the test set predictions
-mod$classification_metrics(use_cv_results = F) %>% print()
+mod$classification_metrics() %>% print()
 
 # and get the importance of features in each ensemble member
 mod$importance() %>% print()

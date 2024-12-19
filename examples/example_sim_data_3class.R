@@ -7,25 +7,24 @@
 
 library(devtools)
 
-#tmp_lib <- "E:/Work/Code/tmp_lib"
-tmp_lib <- '/users/dgibbs/Code/tmp_lib'
+# install to a test dir
+tmp_lib <- "E:/Work/Code/tmp_lib"
 dir.create(tmp_lib)
 devtools::install_local("/users/dgibbs/Code/robencla/", lib = tmp_lib, upgrade = 'never', force = T)
 
-#devtools::install_local("E:/Work/Code/robencla/", lib = tmp_lib)
 
-## restart R
-
-## explicitly load the affected packages from the temporary library
-#tmp_lib <- "E:/Work/Code/tmp_lib"
-tmp_lib <- '/users/dgibbs/Code/tmp_lib'
+# then load library from the test dir
 library(robencla, lib.loc = tmp_lib)
 
 
-# our robust ensemble classifier machine
-mod <- Robencla$new("Test1")
-
+# define the features to be used in prediction
 features <- c('X1','X2','X3','X4','X5','X6','X7','X8','X9','X10','X11','X12')
+# or a list of features per class
+feature_list <- list(
+  label_1=c('X1','X2','X3','X9','X7'),
+  label_2=c('X4','X5','X6','X10'),
+  label_3=c('X7','X8','X11','X12')
+)
 
 # xgboost parameters
 params <- list(
@@ -51,20 +50,8 @@ mod$autocv(data_file='examples/data/sim_data_3classes_train.csv',
             cv_rounds=5,
             data_mode=c('allpairs'), #'allpairs',  'pairs', 'sigpairs' 'quartiles', 'original', 'ranks',\
             signatures=NULL,
-            pair_list=features,
+            pair_list=feature_list,
             params=params)
-
-# # this will train the classifier and test it on a small 20% split
-# mod$train(data_file='examples/data/sim_data_3classes_train.csv',
-#            label_name='label',
-#            sample_id=NULL,
-#            data_mode=c('allpairs'), #'allpairs',  'pairs', 'sigpairs' 'quartiles', 'original', 'ranks',\
-#            pair_list=features,
-#            params=params)
-# 
-# mod$predict(data_file='examples/data/sim_data_3classes_train.csv',
-#             label_name='label',
-#             sample_id=NULL)
 
 
 # print the test data results table
@@ -74,7 +61,7 @@ mod$cv_results %>% head() %>% print()
 mod$classification_metrics(use_cv_results = T) %>% print()
 
 # get a confusion matrix
-table(Label=mod$test_label, Pred=mod$results(include_label = T)$BestCalls)
+table(Label=mod$cv_results$Label, Pred=mod$cv_results$BestCalls)
 
 # and get the importance of features in each ensemble member
 mod$importance() %>% print()

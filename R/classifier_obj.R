@@ -114,7 +114,7 @@ Robencla <- R6Class("Robencla",
                     #' Returns the robencla version.
                     #' @return A character string representing the package version.
                     version = function() {
-                      return("0.5.1.2")
+                      return("0.5.2")
                     },
                     
                     
@@ -411,7 +411,7 @@ Robencla <- R6Class("Robencla",
                     #' @return A ensemble object is added to the list of objects in recm$enbl.
                     #'
                     #'
-                    build_label_ensemble = function(params, idx=NULL) {
+                    build_label_ensemble = function(params) {
                       
                       print('starting ensemble build')
 
@@ -421,9 +421,9 @@ Robencla <- R6Class("Robencla",
                         print(paste0('subtype ',li))
 
                         # first create the binarized label
-                        bin_label <- self$binarize_label(label=self$train_label, x=li)
+                        bin_label <- self$binarize_label(label=self$train_label, x=li
+                                                         
                         # then create the classifier object
-
                         ## !! pair list is either a named list or a vector
                         if (class(self$pair_list) == "list") {
                           this_pair_list <- self$pair_list[[li]]
@@ -435,7 +435,6 @@ Robencla <- R6Class("Robencla",
                                                          obj_mode='ensemble',
                                                          size=params$size, 
                                                          data_mode=self$data_mode,
-                                                         idx=idx,
                                                          train_data=self$train_data,
                                                          pair_list=this_pair_list,
                                                          signatures=self$signatures,
@@ -494,16 +493,13 @@ Robencla <- R6Class("Robencla",
                       self$build_pred_table()
 
                       remapped_label <- self$remap_multiclass_labels(self$train_label)
-                      #print(head(self$train_label))
-                      #print(head(remapped_label))
-                      # train a XGBoost that takes multiple labels.
 
+                      # train a XGBoost that takes multiple labels.
                       self$ensbl[["final"]] <- Ensemble$new(name="final",
                                                          obj_mode="final",
                                                          size=params$size, 
                                                          data_mode=self$data_mode,
                                                          train_data=self$pred_table,
-                                                         idx=self$train_index,
                                                          pair_list=c(),
                                                          signatures=c(),
                                                          label=remapped_label, 
@@ -538,12 +534,7 @@ Robencla <- R6Class("Robencla",
                     },
                     
                     
-                    ensemble_predict = function(data, idx=NULL) {
-                      
-                      if (!is.null(idx)) {
-                        data <- data[idx,]
-                      }
-                      
+                    ensemble_predict = function(data) {
                       for (li in self$unique_labels) {
                         self$ensbl[[li]]$test_data <- data # can't be matrix until after data eng
                         self$ensbl[[li]]$data_eng('test')
@@ -554,8 +545,8 @@ Robencla <- R6Class("Robencla",
                     
                     
                     # predict final uses predictions from predict_ensemble
-                    final_predict = function(data, idx=NULL) {
-                      self$ensemble_predict(data, idx)
+                    final_predict = function(data) {
+                      self$ensemble_predict(data)
                       self$build_pred_table()
 
                       # then we should have a new pred_table from the data
@@ -587,7 +578,7 @@ Robencla <- R6Class("Robencla",
                     #' @return A table of classification metrics for each label and overall.
                     #'
                     #'
-                    classification_metrics = function(labels=NULL, calls=NULL, use_cv_results=TRUE ) {
+                    classification_metrics = function(labels=NULL, calls=NULL, use_cv_results=FALSE ) {
                     
                       if (use_cv_results) {
                         these_calls  <- self$cv_results$BestCalls
@@ -614,7 +605,14 @@ Robencla <- R6Class("Robencla",
                     },
                     
 
-                    
+                    #' @description 
+                    #' Returns a table of feature importance, one list element per label.
+                    #'
+                    #' @details Returns a table of feature importance, one list element per label.
+                    #'
+                    #' @return A table of information gain for each feature pair per class.
+                    #'
+                    #'
                     importance = function() {
                       # for each ensembl 
                       resList <- list()
@@ -630,9 +628,9 @@ Robencla <- R6Class("Robencla",
                         # do not. Also don't have the same sizes.
                         resList[[ei$name]] <- impList %>% 
                           group_by(Feature) %>% 
-                          summarise(MedGain=median(Gain),
-                                    MedCover=median(Cover),
-                                    MedFreq=median(Frequency)) %>%
+                          summarise(MedianGain=median(Gain),
+                                    MedianCover=median(Cover),
+                                    MedianFreq=median(Frequency)) %>%
                           arrange(desc(MedGain))
                       }
                       # now one item per ensemble
@@ -640,7 +638,15 @@ Robencla <- R6Class("Robencla",
                     }, 
                     
                     
-                    results = function(include_label=FALSE) {
+                    #' @description 
+                    #' Returns a table of results on the prediction, one row per example.
+                    #'
+                    #' @details Returns various metrics associated with machine learning performance.
+                    #'
+                    #' @return A table of classification metrics for each label and overall.
+                    #'
+                    #'
+                    results = function() {
                       
                       # get the calls, labeled numerically as 0 to n labels
                       mapped_calls <- self$ensbl[['final']]$pred_combined
@@ -649,16 +655,13 @@ Robencla <- R6Class("Robencla",
                       # build a data frame with calls and sample ids
                       df <- data.frame(SampleIDs = self$test_sample_ids, BestCalls=calls)
                       # norm each row to add to 1.0
-                      #pred_sums <- apply(self$pred_table, 1, sum)
-                      #norm_pred_table <- t(sapply(1:nrow(self$pred_table), function(i) self$pred_table[i,] / pred_sums[i]))
                       norm_pred_table <- (self$pred_table) / rowSums(self$pred_table)
                       # add the labels into the final calls table
                       df <- cbind(df, norm_pred_table)
-                      
-                      if (!is.null(self$test_label) && include_label == TRUE) {
+                      # if there's labels available, include them!
+                      if (!is.null(self$test_label)) {
                         df <- cbind(df, data.frame(Label=self$test_label))
                       }
-                      
                       return(df)
                     },
                     
@@ -723,35 +726,16 @@ Robencla <- R6Class("Robencla",
                                   drop_list,
                                   verbose)
                         
-                        # # build the initial set of predictors
-                        # self$build_label_ensemble(params=params, self$train_index)
-                        # 
-                        # # and train them using a random selection of data
-                        # self$train_models()
-                        # 
-                        # # then make a prediction on the training data
-                        # self$ensemble_predict(self$train_data, self$train_index)
-                        # 
-                        # # build the output predictor
-                        # self$build_final_ensemble(final_params)
-                        # 
-                        # # and use the earlier training predictions to train the output                      
-                        # self$train_final()
-                        # 
-                        # # and finally, make a prediction on some training data.
-                        # self$test_sample_ids <- self$train_sample_ids[self$test_index]
-                        # self$test_label      <- self$train_label[self$test_index]
-                        # self$final_predict(self$train_data, self$test_index)
                         
                         # capture the feature importance from each fold
-                        # self$cv_importance[[cvi]] <- self$importance()
+                        self$cv_importance[[cvi]] <- self$importance()
                         
                         # append the final results 
                         if (cvi > 1) {
                           self$cv_results = rbind(self$cv_results, 
-                                                  self$results(include_label = T))
+                                                  self$results())
                         } else {
-                          self$cv_results = self$results(include_label = T)
+                          self$cv_results = self$results()
                         }
                         
                       } # done with CV

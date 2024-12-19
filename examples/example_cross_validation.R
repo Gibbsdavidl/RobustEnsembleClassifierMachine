@@ -9,11 +9,11 @@ tmp_lib <- "E:/Work/Code/tmp_lib"
 dir.create(tmp_lib)
 devtools::install_local("E:/Work/Code/robencla/", lib = tmp_lib, force = T, upgrade='never')
 ## restart R
+
 ## explicitly load the affected packages from the temporary library
 library(robencla, lib.loc = tmp_lib)
 
 ## OR from github ##
-
 #devtools::install_github('gibbsdavidl/robencla', ref ="allpairs_within", force = T, upgrade='never')
 #library(robencla)
 
@@ -49,7 +49,7 @@ params <- list(
   alpha=0.2,      # L1 regularization term on weights. higher number ~ more conservative (xgboost parameter)
   size=11,        # Size of the ensemble, per binary prediction 
   sample_prop=0.8, # The percentage of data used to train each ensemble member.
-  feature_prop=0.9,
+  feature_prop=0.6,
   subsample=0.8,
   combine_function='median',  # How the ensemble should be combined. 
   verbose=0)
@@ -68,14 +68,13 @@ mod$autocv(data_file='examples/data/Breast Cancer Prediction.csv',
 mod$cv_results %>% head() %>% print()
 
 # metrics on the test set predictions
-mod$classification_metrics() %>% print()
+mod$classification_metrics(use_cv_results = T) %>% print()
 
 # get a confusion matrix
-table(Label=mod$test_label, Pred=mod$results(include_label = T)$BestCalls)
+table(Label=mod$cv_results$Label, Pred=mod$cv_results$BestCalls)
 
 # and get the importance of features in each ensemble member
 mod$importance() %>% print()
-
 
 
 # plot the ROC curves for each class
