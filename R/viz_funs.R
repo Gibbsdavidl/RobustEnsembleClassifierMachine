@@ -68,7 +68,7 @@ plot_pred_heatmap <- function(mod,
   
   if (include_label) {
     df <- mod$ensbl[[label]]$pred_table
-    res_df <- mod$results(include_label = T)
+    res_df <- mod$results()
     # first two columns are rowname and best call
     annotdf = res_df[,c(2, ncol(res_df))]
     num_df <- as.matrix(df)
@@ -103,7 +103,7 @@ plot_pred_final <- function(mod,
   
   if (include_label) {
     df <- na.omit( 
-      mod$results(include_label = include_label)
+      mod$results()
     )
     # first two columns are rowname and best call
     a <- 3
@@ -114,7 +114,7 @@ plot_pred_final <- function(mod,
     pheatmap(num_df, annotation_row = annotdf, 
              cluster_rows = cluster, show_rownames=show_rownames)
   } else {
-    df <- mod$results(include_label = include_label)
+    df <- mod$results()
     # first two columns are rowname and best call
     a <- 3
     b <- ncol(df)
