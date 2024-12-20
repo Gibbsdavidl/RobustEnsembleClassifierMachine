@@ -14,7 +14,7 @@ devtools::install_local("E:/Work/Code/robencla/", lib = tmp_lib, force = T, upgr
 library(robencla, lib.loc = tmp_lib)
 
 ## OR from github ##
-#devtools::install_github('gibbsdavidl/robencla', ref ="allpairs_within", force = T, upgrade='never')
+#devtools::install_github('gibbsdavidl/robencla', ref ="main", force = T, upgrade='never')
 #library(robencla)
 
 ######################################################
