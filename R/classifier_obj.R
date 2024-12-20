@@ -258,7 +258,8 @@ Robencla <- R6Class("Robencla",
                       }
 
                       # if we have some columns that have zero variance, fix that
-                      data_var <- self$train_data[, lapply(.SD, var, na.rm=TRUE)]
+                      data_var <- suppressWarnings(  ## columns with text become NAs
+                                    self$train_data[, lapply(.SD, var, na.rm=TRUE)] )
                       data_var_idx <- which(data_var == 0.0)
                       if (length(data_var_idx) > 0) {
                         if (is.null(verbose) || verbose > 0) {
