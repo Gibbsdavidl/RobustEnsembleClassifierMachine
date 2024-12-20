@@ -1,11 +1,19 @@
 
+# Example using the train and predict functions.
 
+# install to a temp dir
+tmp_lib <- "E:/Work/Code/tmp_lib"
+dir.create(tmp_lib)
+devtools::install_local("E:/Work/Code/robencla/", lib = tmp_lib, force = T, upgrade='never')
+## restart R
 
-# Example using the autopred (auto-prediction) function.
+## explicitly load the affected packages from the temporary library
+library(robencla, lib.loc = tmp_lib)
 
-install.packages('~/Code/robencla', repos = NULL, type = 'source')
+## OR from github ##
+#devtools::install_github('gibbsdavidl/robencla', ref ="allpairs_within", force = T, upgrade='never')
+#library(robencla)
 
-library(robencla)
 
 mod <- Robencla$new("Test3")
 
@@ -54,18 +62,32 @@ mod$predict(data_file='examples/data/bcp_test_data.csv',
 
 
 # print the test data results table
-mod$results(include_label = T) %>% head() %>% print()
+mod$results() %>% head() %>% print()
 
 # get a confusion matrix
-table(Label=mod$test_label, Pred=mod$results(include_label = T)$BestCalls)
+table(Label=mod$test_label, Pred=mod$results()$BestCalls)
 
 # metrics on the test set predictions
-mod$classification_metrics(use_cv_results = F) %>% print()
+mod$classification_metrics() %>% print()
 
 # and get the importance of features in each ensemble member
 mod$importance() %>% print()
 
 # plot the ROC curves for each class
 ## IF THE ROC IS UPSIDE DOWN, SET FLIP=T
-ensemble_rocs(mod, flip=F) # uses the last fold trained.
+ensemble_rocs(mod) # uses the last fold trained.
+
+# The final scores
+plot_pred_final(mod)
+
+# scores for each label
+plot_pred_heatmap(mod, 
+                  label = '2',
+                  cluster = T)
+
+plot_pred_heatmap(mod, 
+                  label = '4',
+                  cluster = T)
+
+
 

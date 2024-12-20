@@ -3,11 +3,63 @@
 
 ### Robust feature engineering transforms data and trains an ensemble of XGboost classifiers.
 
-Below, the first example demonstrates cross validation, and the second example shows how to train and test on separate files.
+The first example demonstrates cross validation, and the second example shows how to train and test on separate files.
 
-## Cross Validation 
+
+
+Select some combination of data types and the data will be transformed.
+For example, if both 'binary' and 'ranks' are selected, each feature will
+be transformed into both a binary version and a ranks version.
+
+
+## Data types available
+
+*original*
+No change to the data.
+
+
+*binary*
+Transforms all columns to binary, based on using the median as a threshold.
+
+
+*tertiles*
+Breaks each feature into tertiles, with levels ~ (0-33%),(33-66%),(66-100)
+
+
+*quartiles*
+Breaks each feature into quartiles.
+
+
+*ranks*
+Ranks each feature.
+
+
+*allpairs*
+All unique pairs of features will be used to create binary features I(f_1 < f_2),
+identifying where values for feature f_1 are less than feature f_2.
+
+
+*sigpairs*
+Signatures defined as a list of sets, where each set is comprised of column names.
+For example a list of gene sets.
+
+
+*namedpairs*
+For each label, features are grouped into pairs. Odd numbered index indicates the 
+first member of each pair  (1, 3, 5, ...), the even numbers are the mate of each
+pair (1-2, 3-4, 5-6, ...).
+
+
+
+
+### Notes
 
 Naming feature-pairs per label often works better than taking all pairs of features.
+
+
+
+
+
 
 ```
 devtools::install_github("gibbsdavidl/robencla")

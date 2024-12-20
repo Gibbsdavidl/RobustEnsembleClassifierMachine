@@ -30,26 +30,26 @@ Robencla <- R6Class("Robencla",
                     #' @field file_name the data file
                     file_name = NULL,
                     
-                    #' @field data the data.table used to train and test
-                    data = NULL,
-                    
-                    #' @field the data column used as label, the target
-                    label = NULL,
-                    
-                    #' @field the column name containing the label in the training data
+                    #' @field label_name column name containing the label in the training data
                     label_name = NULL,
                     
-                    #' @sample_id the data column used to identify samples
+                    #'  @field sample_id the data column used to identify samples
                     sample_id = NULL,
                     
-                    #' @sample_ids to save the sample_ids
+                    #'  @field sample_ids to save the sample_ids
                     sample_ids = NULL,
                     
-                    #' @train_sample_ids the sample IDs used in training data
+                    #'  @field train_sample_ids the sample IDs used in training data
                     train_sample_ids = NULL,
 
-                    #' @test_sample_ids the sample IDs used in test data
+                    #'  @field test_sample_ids the sample IDs used in test data
                     test_sample_ids = NULL,
+                    
+                    #'  @field train_index the index into training data to subsample, mostly for CV
+                    train_index = NULL,
+                    
+                    #'  @field test_index the index into test data to subsample, mostly for CV
+                    test_index = NULL,
                     
                     #' @field cv_rounds the number of cross-validation rounds, values greater than 1 overrides data_split.
                     cv_rounds=1,
@@ -114,7 +114,7 @@ Robencla <- R6Class("Robencla",
                     #' Returns the robencla version.
                     #' @return A character string representing the package version.
                     version = function() {
-                      return("0.5.1expr1")
+                      return("0.5.2")
                     },
                     
                     
@@ -125,17 +125,6 @@ Robencla <- R6Class("Robencla",
                       cat(paste0("Hello, my name is ", self$name, ".\n"))
                     },
                     
-                    
-                    #' @description Reads the data file.
-                    #' @param file_name The name of the file.
-                    #' @param sep The separting character ',' or '\t'
-                    read_data = function(file_name, sep, header) {
-                      self$file_name <- file_name 
-                      self$data <- data.table::fread(file=file_name, sep=sep, header=T)
-                      colnames(self$data) <- gsub(" ", "_", colnames(self$data))
-                      return(invisible(self))
-                    },
-                  
                     
                     #' @description Reads the data file.
                     #' @param file_name The name of the file.
@@ -165,153 +154,23 @@ Robencla <- R6Class("Robencla",
                     #' @param label_name string, the column name indicating the target label
                     #' @param drop_list a vector of strings indicating what columns to drop
                     #' @param data_split numeric value, the percent of data to use in training 
-                    data_split_fun = function(data_split, cv_rounds=1, i=1) {
+                    data_split_fun = function(data_split) {
                       
-                      if (cv_rounds == 1) {
-                        # to split the data into training and test components
-                        n <- nrow(self$data)
-                        idx <- sample.int(n = n, size=data_split*n)
-                        jdx <- setdiff( (1:n), idx)
-                        # then create the data sets
-                        self$train_data <- self$data[idx,]
-                        self$train_label <- self$label[idx]
-                        self$train_sample_ids <- self$sample_ids[idx]
-                        # 
-                        self$test_data <- self$data[jdx,]
-                        self$test_label <- self$label[jdx]
-                        self$test_sample_ids <- self$sample_ids[jdx]
-                        # and record the unique categories in labels 
-                        self$unique_labels <- unique(self$train_label)
-                        
-                        # or ELSE we're doing cross-validation
-                      } else {
-                        #Create N equally size folds
-                        folds <- cut(seq(1,nrow(self$data)),breaks=cv_rounds,labels=FALSE)
-                        
-                        #Segement your data by fold using the which() function 
-                        testIndexes <- which(folds==i,arr.ind=TRUE)
-
-                        self$train_data <- self$data[-testIndexes, ]
-                        self$train_label <- self$label[-testIndexes]
-                        self$train_sample_ids <- self$sample_ids[-testIndexes]
-                        
-                        self$test_data  <- self$data[testIndexes, ]
-                        self$test_label <- self$label[testIndexes]
-                        self$test_sample_ids <- self$sample_ids[testIndexes]
-                        
-                        self$unique_labels <- unique(self$train_label)
-                      
+                      if (is.null(data_split)) {
+                        stop("Missing sample_prop in params list!")
                       }
                       
+                        # to split the data into training and test components
+                        n <- nrow(self$train_data)
+                        idx <- sample.int(n = n, size=data_split*n)
+                        jdx <- setdiff( (1:n), idx)
+                        self$train_index <- idx
+                        self$test_index <- jdx
+                        
                       return()
                     },
                     
 
-                    #' @description Does some setup processing on the data file, drop columns, split data into train and test, and identify the label column.
-                    #' @param data_frame data.frame, data.frame or data.table, if NULL, then use file_name.
-                    #' @param file_name string, the name of the file
-                    #' @param sep string, the separating character
-                    #' @param data_mode string, 
-                    #' @param label_name string, the column name indicating the target label
-                    #' @param drop_list a vector of strings indicating what columns to drop
-                    #' @param data_split numeric value, the percent of data to use in training 
-                    data_setup = function(data_frame=NULL,
-                                          file_name=NULL, 
-                                          sep=NULL, 
-                                          data_mode=NULL, 
-                                          signatures=NULL, 
-                                          pair_list=NULL,
-                                          label_name=NULL, 
-                                          sample_id=NULL,
-                                          drop_list=NULL, 
-                                          data_split=NULL,
-                                          verbose=NULL){
-                      # First reading it in
-                      self$file_name  <- file_name
-                      self$data_mode  <- data_mode
-                      self$signatures <- signatures
-                      self$pair_list  <- pair_list
-                      self$data_split <- data_split
-                      self$label_name <- label_name
-                      self$verbose <- verbose
-                      
-                      # bug file_name checked although null
-                      if (!is.null(file_name)) {
-                        if (is.null(data_frame) & is.null(sep) & stringr::str_detect(file_name, '.csv')) {
-                          sep = ','
-                        } else if (is.null(data_frame) & is.null(sep) & stringr::str_detect(file_name, '.tsv')) {
-                          sep = '\t'
-                        } else if (!is.null(file_name) & is.null(sep)) {
-                          stop('Please specify the sep parameter... or use a .csv or .tsv file.')
-                        }
-                      }
-                      
-                      # read in the data or convert to a data.table
-                      if (is.null(data_frame) & !is.null(file_name)) {
-                        thisdata <- data.table::fread(file=file_name, sep=sep, header=T)
-                      } else if (!is.null(data_frame) & is.null(file_name)) {
-                        colnames(data_frame) <- gsub("\\.","_",colnames(data_frame))
-                        thisdata <- as.data.table(data_frame)
-                      } else {
-                        stop('Specify only ONE of data_frame or file_name.')
-                      }
-                      
-                      # reorder rows
-                      self$data <- thisdata[sample(nrow(thisdata)),]
-                      
-                      # replace spaces with underscores
-                      colnames(self$data) <- gsub(" ", "_", colnames(self$data))
-
-                      # make sure we have named label column in the parameters
-                      if (is.null(label_name)) {
-                        stop("Make sure label_name is not null!")
-                      } else {
-                        self$label <- sapply(self$data[[label_name]], as.character)
-                        label_name <- gsub(' ', '_', label_name)
-                      }
-
-                      # make sure we have a sample ID column
-                      if ((!is.null(sample_id)) && sample_id %in% colnames(self$data)) {
-                        self$sample_id <- gsub(' ', '_', sample_id)
-                        self$sample_ids <- sapply(self$data[[self$sample_id]], as.character)
-                        set(self$data, j = self$sample_id, value = NULL)  # then del it
-                      } else {
-                        self$sample_ids <- 1:nrow(self$data)
-                      }
-
-                      # if the drop list is defined, standardize the names
-                      if (!is.null(drop_list)) {
-                        drop_list <- gsub(' ', '_', drop_list)
-                      }
-
-                      # make sure we have a label column
-                      if (!label_name %in% colnames(self$data)) {
-                        stop('Make sure the label name matches one of the columns!')
-                      } else {
-                        set(self$data, j = label_name, value = NULL)
-                      }
-
-                      # if we have a drop list, drop those columns
-                      if ((!is.null(drop_list)) && all(sapply(drop_list, function(a) a %in% colnames(self$data)))) {
-                        set(self$data, j = drop_list, value = NULL)
-                      } else if ((!is.null(drop_list))) {
-                        stop('Make sure the drop_list contains column names found in the data!')
-                      }
-
-                      # if we have some columns that have zero variance, fix that
-                      data_var <- self$data[, lapply(.SD, var, na.rm=TRUE)]
-                      data_var_idx <- which(data_var == 0.0)
-                      if (length(data_var_idx) > 0) {
-                        stop("DATA CONTAINS ZERO VARIANCE COLUMNS.\nThis will need to be fixed. \n Ideas: Drop or fill with random noise...")
-                      }
-                      
-                      # DATA ENGINEERING
-                      # self$data_eng('data')
-                      self$op_mode <- 'data'
-                      
-                      return(invisible(self))
-                    },
-                    
                     
                     #' @description Does some setup processing on the training data file, drop columns and identify the label column.
                     #' @param label_name string, the column name indicating the target label
@@ -422,7 +281,6 @@ Robencla <- R6Class("Robencla",
                       self$op_mode <- 'train'
 
                       print('finish train data setup')
-
 
                       return(invisible(self))
                     },
@@ -564,8 +422,8 @@ Robencla <- R6Class("Robencla",
 
                         # first create the binarized label
                         bin_label <- self$binarize_label(label=self$train_label, x=li)
+                                                         
                         # then create the classifier object
-
                         ## !! pair list is either a named list or a vector
                         if (class(self$pair_list) == "list") {
                           this_pair_list <- self$pair_list[[li]]
@@ -635,10 +493,8 @@ Robencla <- R6Class("Robencla",
                       self$build_pred_table()
 
                       remapped_label <- self$remap_multiclass_labels(self$train_label)
-                      #print(head(self$train_label))
-                      #print(head(remapped_label))
-                      # train a XGBoost that takes multiple labels.
 
+                      # train a XGBoost that takes multiple labels.
                       self$ensbl[["final"]] <- Ensemble$new(name="final",
                                                          obj_mode="final",
                                                          size=params$size, 
@@ -678,7 +534,7 @@ Robencla <- R6Class("Robencla",
                     },
                     
                     
-                    ensemble_predict = function(data, combine_function) {
+                    ensemble_predict = function(data) {
                       for (li in self$unique_labels) {
                         self$ensbl[[li]]$test_data <- data # can't be matrix until after data eng
                         self$ensbl[[li]]$data_eng('test')
@@ -689,8 +545,8 @@ Robencla <- R6Class("Robencla",
                     
                     
                     # predict final uses predictions from predict_ensemble
-                    final_predict = function(data, combine_function) {
-                      self$ensemble_predict(data, combine_function)
+                    final_predict = function(data) {
+                      self$ensemble_predict(data)
                       self$build_pred_table()
 
                       # then we should have a new pred_table from the data
@@ -700,7 +556,7 @@ Robencla <- R6Class("Robencla",
                       return(invisible(self))
                     },
                     
-                    
+
                     print_error = function(label, root, threshold) {
                       if (all(class(label) == 'numeric') == FALSE) {
                         label <- as.numeric(label)
@@ -709,38 +565,6 @@ Robencla <- R6Class("Robencla",
                       self$ensbl[[root]]$print_error(new_label, threshold)
                       return(invisible(self))
                     },
-                    
-                    
-                    # total percent correct from all calls
-                    accuracy = function(labels, calls) {
-                      m <- sum(labels == calls)
-                      return(m/length(labels))
-                    },
-                    
-                    # precision
-                    # what proportion of predicted positives are truly positive
-                    precision = function(cmdf, i) {
-                      called_pos <- cmdf %>% dplyr::filter(calls==i) %>% pull('Freq')
-                      true_pos <- cmdf %>% dplyr::filter(labels==i & calls == i) %>% pull('Freq')
-                      return(true_pos / sum(called_pos))
-                    },
-                    
-                    # sensitivity
-                    # what proportion of true positives are called positive
-                    sensitivity = function(cmdf, i) {
-                      true_labels <- cmdf %>% dplyr::filter(labels==i) %>% pull('Freq')
-                      true_pos <- cmdf %>% dplyr::filter(labels==i & calls == i) %>% pull('Freq')
-                      return(true_pos / sum(true_labels))
-                    },
-                    
-                    # specificity
-                    # what proportion of true negatives are called negative
-                    specificity = function(cmdf, i) {
-                      false_labels <- cmdf %>% dplyr::filter(labels!=i) %>% pull('Freq')
-                      true_neg <- cmdf %>% dplyr::filter(labels!=i & calls != i) %>% pull('Freq')
-                      return(sum(true_neg) / sum(false_labels))
-                    },
-                    
                     
                     
                     #' @description 
@@ -754,89 +578,41 @@ Robencla <- R6Class("Robencla",
                     #' @return A table of classification metrics for each label and overall.
                     #'
                     #'
-                    classification_metrics = function(these_labels=NULL, these_calls=NULL, use_cv_results=TRUE ) {
-                      
-                        # there are instances where some classes are not returned
-                        # in the BestCalls, those can cause numeric(0) in sens, spec, etc.
-                        isEmpty <- function(x) {
-                          return(identical(x, numeric(0)))
-                        }
-                      
-                        fixMissing <- function(x) {
-                          sapply(x, function(a) if(isEmpty(a)){0}else{a})
-                        }
-                      
-                        if (use_cv_results) {
-                          calls <- self$cv_results$BestCalls
-                          labels <- self$cv_results$Label
-                        } 
-                        else if ( (!is.null(these_calls)) && (!is.null(these_labels)) ) {
-                          labels <- these_labels
-                          calls <- these_calls
+                    classification_metrics = function(labels=NULL, calls=NULL, use_cv_results=FALSE ) {
+                    
+                      if (use_cv_results) {
+                        these_calls  <- self$cv_results$BestCalls
+                        these_labels <- self$cv_results$Label
+                      } 
+                      else if ( (!is.null(calls)) && (!is.null(labels)) ) {
+                        these_labels <- labels
+                        these_calls  <- calls
+                      } else {
+                        if (is.null(self$test_label)) {
+                          return("No test labels.")
                         } else {
-                          if (is.null(self$test_label)) {
-                            return("No test labels.")
-                          } else {
-                            # first make sure our labels are mapped to integers correctly
-                            labels <- self$test_label
-                            # then get the calls
-                            mapped_calls <- self$ensbl[['final']]$pred_combined
-                            calls <- self$unmap_multiclass_labels(mapped_calls)
-                          }
+                          # first make sure our labels are mapped to integers correctly
+                          these_labels <- self$test_label
+                          # then get the calls
+                          mapped_calls <- self$ensbl[['final']]$pred_combined
+                          these_calls  <- self$unmap_multiclass_labels(mapped_calls)
                         }
-                          
-                        # then build the multi-class confusion matrix
-                        confusion_matrix <- table( labels, calls )
-                        
-                        # labels of the confusion matrix
-                        cm_labels <- rownames(confusion_matrix)
-                        
-                        # and we'll transform that into a data.frame
-                        cmdf <- as.data.frame(confusion_matrix, stringsAsFactors = F)
-                        
-                        # accuracy
-                        acc <- self$accuracy(labels, calls)
-                        
-                        # first compute precision
-                        prec <- fixMissing(sapply(cm_labels, function(a) self$precision(cmdf, a)))
-                        
-                        # then specificity
-                        spec <- fixMissing(sapply(cm_labels, function(a) self$specificity(cmdf, a)))
-                        
-                        # then sensitivity or recall
-                        sens <- fixMissing(sapply(cm_labels, function(a) self$sensitivity(cmdf, a)))
-                        
-                        # then F1
-                        if (is.numeric(sens) & is.numeric(prec)) {
-                          f1 <-(2*sens*prec) / (sens+prec+0.0000000001)
-                        } else {
-                          f1 <- 0
-                        }
-                        
-                        metrics <- data.frame(Label=cm_labels,
-                                              Accuracy=acc,
-                                              Sensitivity=sens,
-                                              Specificity=spec,
-                                              Precision=prec,
-                                              F1=f1,
-                                              stringsAsFactors = F)
-                        
-                        avg_row <- data.frame(Label="Average",
-                                              Accuracy=mean(metrics[,2]),
-                                              Sensitivity=mean(metrics[,3]),
-                                              Specificity=mean(metrics[,4]),
-                                              Precision=mean(metrics[,5]),
-                                              F1=mean(metrics[,6]), 
-                                              row.names = 'Average',
-                                              stringsAsFactors = F)
-                        
-                        metrics <- rbind(metrics, avg_row)
-                        
-                        return(metrics)
+                      }
                       
+                      metrix <- Metrics$new(these_labels, these_calls)
+                      
+                      return(metrix$compute_metrics())
                     },
                     
-                    
+
+                    #' @description 
+                    #' Returns a table of feature importance, one list element per label.
+                    #'
+                    #' @details Returns a table of feature importance, one list element per label.
+                    #'
+                    #' @return A table of information gain for each feature pair per class.
+                    #'
+                    #'
                     importance = function() {
                       # for each ensembl 
                       resList <- list()
@@ -852,9 +628,9 @@ Robencla <- R6Class("Robencla",
                         # do not. Also don't have the same sizes.
                         resList[[ei$name]] <- impList %>% 
                           group_by(Feature) %>% 
-                          summarise(MedGain=median(Gain),
-                                    MedCover=median(Cover),
-                                    MedFreq=median(Frequency)) %>%
+                          summarise(MedianGain=median(Gain),
+                                    MedianCover=median(Cover),
+                                    MedianFreq=median(Frequency)) %>%
                           arrange(desc(MedGain))
                       }
                       # now one item per ensemble
@@ -862,7 +638,15 @@ Robencla <- R6Class("Robencla",
                     }, 
                     
                     
-                    results = function(include_label=FALSE) {
+                    #' @description 
+                    #' Returns a table of results on the prediction, one row per example.
+                    #'
+                    #' @details Returns various metrics associated with machine learning performance.
+                    #'
+                    #' @return A table of classification metrics for each label and overall.
+                    #'
+                    #'
+                    results = function() {
                       
                       # get the calls, labeled numerically as 0 to n labels
                       mapped_calls <- self$ensbl[['final']]$pred_combined
@@ -871,16 +655,13 @@ Robencla <- R6Class("Robencla",
                       # build a data frame with calls and sample ids
                       df <- data.frame(SampleIDs = self$test_sample_ids, BestCalls=calls)
                       # norm each row to add to 1.0
-                      #pred_sums <- apply(self$pred_table, 1, sum)
-                      #norm_pred_table <- t(sapply(1:nrow(self$pred_table), function(i) self$pred_table[i,] / pred_sums[i]))
                       norm_pred_table <- (self$pred_table) / rowSums(self$pred_table)
                       # add the labels into the final calls table
                       df <- cbind(df, norm_pred_table)
-                      
-                      if (!is.null(self$test_label) && include_label == TRUE) {
+                      # if there's labels available, include them!
+                      if (!is.null(self$test_label)) {
                         df <- cbind(df, data.frame(Label=self$test_label))
                       }
-                      
                       return(df)
                     },
                     
@@ -908,44 +689,43 @@ Robencla <- R6Class("Robencla",
                       
                       self$combine_function=params$combine_function
                       
-                      # perform the data set up
-                      self$data_setup(data_frame=data_frame,
-                                      file_name=data_file,
-                                      sep=sep,
-                                      data_mode=data_mode,
-                                      signatures=signatures,
-                                      pair_list=pair_list,
-                                      label_name=label_name, 
-                                      sample_id=sample_id,
-                                      drop_list=drop_list,
-                                      verbose=verbose)
-
-                      self$op_mode <- 'train'
+                      if (is.null(data_frame)) {
+                        data_frame <- data.table::fread(file=data_file, sep=sep, header=T)
+                        data_frame <- as.data.frame(data_frame)
+                      }
+                      
+                      self$op_mode <- 'cv'
                       
                       for (cvi in 1:cv_rounds){
                         
                         print(paste0("*** CV Round ", cvi, " ***"))
                         
                         # SPLIT DATA round 1
-                        self$data_split_fun(params$sample_prop, cv_rounds, cvi)
+                        self$data_split_fun(params$sample_prop) 
                         
-                        # build the initial set of predictors
-                        self$build_label_ensemble(params=params)
+                        data_train_table <- data_frame[self$train_index,]
+                        data_test_table  <- data_frame[self$test_index, ]
                         
-                        # and train them using a random selection of data
-                        self$train_models()
+                        self$train(data_frame=data_train_table,
+                                   data_file=NULL,
+                                   sep,
+                                   label_name,
+                                   sample_id,
+                                   drop_list,
+                                   data_mode,
+                                   signatures,
+                                   pair_list,
+                                   params,
+                                   verbose)
                         
-                        # then make a prediction on the training data
-                        self$ensemble_predict(self$train_data)
+                        self$test(data_frame=data_test_table,
+                                  data_file=NULL,
+                                  sep,
+                                  label_name,
+                                  sample_id,
+                                  drop_list,
+                                  verbose)
                         
-                        # build the output predictor
-                        self$build_final_ensemble(final_params)
-                        
-                        # and use the earlier training predictions to train the output                      
-                        self$train_final()
-                        
-                        # and finally, make a prediction on some training data.
-                        self$final_predict(self$test_data)
                         
                         # capture the feature importance from each fold
                         self$cv_importance[[cvi]] <- self$importance()
@@ -953,9 +733,9 @@ Robencla <- R6Class("Robencla",
                         # append the final results 
                         if (cvi > 1) {
                           self$cv_results = rbind(self$cv_results, 
-                                                  self$results(include_label = T))
+                                                  self$results())
                         } else {
-                          self$cv_results = self$results(include_label = T)
+                          self$cv_results = self$results()
                         }
                         
                       } # done with CV
@@ -1022,7 +802,7 @@ Robencla <- R6Class("Robencla",
                                         drop_list=NULL,
                                         verbose=NULL) {
                     
-                      self$test_data_setup( data_frame=data_frame,
+                      self$test_data_setup(data_frame=data_frame,
                                       file_name=data_file, 
                                       sep=sep, 
                                       label_name=label_name, 
