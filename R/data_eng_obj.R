@@ -212,7 +212,7 @@ Data_eng <- R6Class("Data_eng",
                           this_new_col <- paste0(sig_names[ci],'_X_', sig_names[cj])
                           newcol_names <- c(newcol_names, this_new_col)
                           newcol_dat[[this_new_col]] <- as.numeric(sig_pair_temp)
-                          print(paste0("sigpair new column: ", this_new_col )
+                          print(paste0("sigpair new column: ", this_new_col ))
                         }
                       }
                       sigpairs_dat <- data.table(data.frame(newcol_dat))

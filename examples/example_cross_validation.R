@@ -19,7 +19,7 @@ library(robencla, lib.loc = tmp_lib)
 
 ######################################################
 
-
+library(robencla)
 
 mod <- Robencla$new("Test2")
 
