@@ -201,14 +201,28 @@ Data_eng <- R6Class("Data_eng",
                           s1 <- gsub(' ', '_', self$signatures[[sn1]])
                           s2 <- gsub(' ', '_', self$signatures[[sn2]])
                           sig_pair_temp <- list()
+                          
                           # each sig is a group to get AUC
                           sig_group = c( rep.int('a', length(s1)), rep.int('b', length(s2)))
+                          
                           # for each sample si
-                          sig_pair_temp <- sapply(1:nrow(data), function(si) {
-                            val_group <- c( as.numeric(data[si,.SD,.SD=s1]), as.numeric(data[si,.SD,.SD=s2]) )
+                          # sig_pair_temp <- sapply(1:nrow(data), function(si) {
+                          #   val_group <- c( as.numeric(data[si,.SD,.SD=s1]), as.numeric(data[si,.SD,.SD=s2]) )
+                          #   roc_obj <- ROCit::rocit(val_group, sig_group)
+                          #   roc_obj$AUC
+                          # }) 
+                          
+                          ### New sig fun ###
+                          compute_roc <- function(sig_group, idx, jdx, a) {
+                            val_group <- c( as.numeric(a[idx]), as.numeric(a[jdx]) )
                             roc_obj <- ROCit::rocit(val_group, sig_group)
-                            roc_obj$AUC
-                          }) 
+                            return(roc_obj$AUC)
+                          }
+                          idx <- which(colnames(data) %in% s1)
+                          jdx <- which(colnames(data) %in% s2)
+                          sig_pair_temp <- apply(data, 1, FUN = function(a) compute_roc(sig_group, idx, jdx, a))
+                          ###    ###    ###
+                          
                           this_new_col <- paste0(sig_names[ci],'_X_', sig_names[cj])
                           newcol_names <- c(newcol_names, this_new_col)
                           newcol_dat[[this_new_col]] <- as.numeric(sig_pair_temp)
