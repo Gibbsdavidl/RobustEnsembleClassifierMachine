@@ -74,14 +74,16 @@ plot_pred_heatmap <- function(mod,
     num_df <- as.matrix(df)
     rownames(num_df) <- rownames(annotdf)
     pheatmap(num_df, annotation_row = annotdf, 
-             cluster_rows = cluster, show_rownames=show_rownames)
+             cluster_rows = cluster, 
+             show_rownames=show_rownames)
   } else {
     df <- mod$ensbl[[label]]$pred_table
     # first two columns are rowname and best call
     num_df <- as.matrix(df)
     rownames(num_df) <- rownames(df)
     pheatmap(num_df, #annotation_row = annotdf, 
-             cluster_rows = cluster, show_rownames=show_rownames)
+             cluster_rows = cluster, 
+             show_rownames=show_rownames)
   }
   
   }
@@ -112,7 +114,8 @@ plot_pred_final <- function(mod,
     num_df <- as.matrix(df[,a:b])
     rownames(num_df) <- rownames(df)
     pheatmap(num_df, annotation_row = annotdf, 
-             cluster_rows = cluster, show_rownames=show_rownames)
+             cluster_rows = cluster, 
+             show_rownames=show_rownames)
   } else {
     df <- mod$results()
     # first two columns are rowname and best call
@@ -121,7 +124,8 @@ plot_pred_final <- function(mod,
     num_df <- as.matrix(df[,a:b])
     rownames(num_df) <- rownames(df)
     pheatmap(num_df, #annotation_row = annotdf, 
-             cluster_rows = cluster, show_rownames=show_rownames)
+             cluster_rows = cluster, 
+             show_rownames=show_rownames)
   }
   
 
