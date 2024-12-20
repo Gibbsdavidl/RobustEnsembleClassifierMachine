@@ -4,17 +4,18 @@
 # Example where most informative feature in training data is not 
 # present in the test set.
 
+# install to a temp dir
 tmp_lib <- "E:/Work/Code/tmp_lib"
 dir.create(tmp_lib)
-devtools::install_local("E:/Work/Code/robencla/", lib = tmp_lib, force = T)
+devtools::install_local("E:/Work/Code/robencla/", lib = tmp_lib, force = T, upgrade='never')
 ## restart R
+
 ## explicitly load the affected packages from the temporary library
 library(robencla, lib.loc = tmp_lib)
 
 ## OR from github ##
-
-devtools::install_github('gibbsdavidl/robencla', ref ="allpairs_within", force = T)
-library(robencla)
+#devtools::install_github('gibbsdavidl/robencla', ref ="allpairs_within", force = T, upgrade='never')
+#library(robencla)
 
 
 ######################################################
@@ -81,14 +82,17 @@ ensemble_rocs(mod) # uses the last fold trained.
 plot_pred_final(mod)
 
 # scores for each label
-plot_pred_heatmap(mod, label = 'label_1',
-                  include_label = T, cluster = T)
+plot_pred_heatmap(mod, 
+                  label = 'label_1',
+                  cluster = T)
 
-plot_pred_heatmap(mod, label = 'label_2',
-                  include_label = T, cluster = T)
+plot_pred_heatmap(mod, 
+                  label = 'label_2',
+                  cluster = T)
 
-plot_pred_heatmap(mod, label = 'label_3',
-                  include_label = T, cluster = T)
+plot_pred_heatmap(mod, 
+                  label = 'label_3',
+                  cluster = T)
 
 
 ### result of applying different combination functions.

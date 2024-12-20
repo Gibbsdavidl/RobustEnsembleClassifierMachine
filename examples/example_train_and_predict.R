@@ -1,9 +1,19 @@
 
 # Example using the train and predict functions.
 
-install.packages('~/Code/robencla', repos = NULL, type = 'source')
+# install to a temp dir
+tmp_lib <- "E:/Work/Code/tmp_lib"
+dir.create(tmp_lib)
+devtools::install_local("E:/Work/Code/robencla/", lib = tmp_lib, force = T, upgrade='never')
+## restart R
 
-library(robencla)
+## explicitly load the affected packages from the temporary library
+library(robencla, lib.loc = tmp_lib)
+
+## OR from github ##
+#devtools::install_github('gibbsdavidl/robencla', ref ="allpairs_within", force = T, upgrade='never')
+#library(robencla)
+
 
 mod <- Robencla$new("Test3")
 
@@ -71,11 +81,13 @@ ensemble_rocs(mod) # uses the last fold trained.
 plot_pred_final(mod)
 
 # scores for each label
-plot_pred_heatmap(mod, label = '2',
-                  include_label = T, cluster = T)
+plot_pred_heatmap(mod, 
+                  label = '2',
+                  cluster = T)
 
-plot_pred_heatmap(mod, label = '4',
-                  include_label = T, cluster = T)
+plot_pred_heatmap(mod, 
+                  label = '4',
+                  cluster = T)
 
 
 

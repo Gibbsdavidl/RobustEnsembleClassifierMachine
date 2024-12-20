@@ -85,11 +85,13 @@ ensemble_rocs(mod) # uses the last fold trained.
 plot_pred_final(mod)
 
 # scores for each label
-plot_pred_heatmap(mod, label = '2',
-                  include_label = T, cluster = T)
+plot_pred_heatmap(mod, 
+                  label = '2',
+                  cluster = T)
 
-plot_pred_heatmap(mod, label = '4',
-                  include_label = T, cluster = T)
+plot_pred_heatmap(mod, 
+                  label = '4',
+                  cluster = T)
 
 
 

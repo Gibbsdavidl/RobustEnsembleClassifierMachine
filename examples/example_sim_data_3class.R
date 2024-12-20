@@ -5,16 +5,17 @@
 # features after moving to a test set that is generated on an imaginary
 # but very different platform with different levels of measures.
 
-library(devtools)
-
-# install to a test dir
-tmp_lib <- "/users/dgibbs/Code/tmp_lib"
+tmp_lib <- "E:/Work/Code/tmp_lib"
 dir.create(tmp_lib)
-devtools::install_local("/users/dgibbs/Code/robencla/", lib = tmp_lib, upgrade = 'never', force = T)
+devtools::install_local("E:/Work/Code/robencla/", lib = tmp_lib, force = T, upgrade='never')
+## restart R
 
-
-# then load library from the test dir
+## explicitly load the affected packages from the temporary library
 library(robencla, lib.loc = tmp_lib)
+
+## OR from github ##
+#devtools::install_github('gibbsdavidl/robencla', ref ="allpairs_within", force = T, upgrade='never')
+#library(robencla)
 
 
 # define the features to be used in prediction
@@ -42,6 +43,8 @@ params <- list(
   subsample=0.9,
   combine_function='median',  # How the ensemble should be combined. 
   verbose=0)
+
+mod <- Robencla$new("mod1")
 
 # this will train the classifier and test it on a small 20% split
 mod$autocv(data_file='examples/data/sim_data_3classes_train.csv',
@@ -76,9 +79,11 @@ ensemble_rocs(mod) # uses the last fold trained.
 plot_pred_final(mod)
 
 # scores for each label
-plot_pred_heatmap(mod, label = 'label_1',
-                  include_label = T, cluster = T)
+plot_pred_heatmap(mod, 
+                  label = 'label_1',
+                  cluster = T)
 
-plot_pred_heatmap(mod, label = 'label_2',
-                  include_label = T, cluster = T)
+plot_pred_heatmap(mod, 
+                  label = 'label_2',
+                  cluster = T)
 
