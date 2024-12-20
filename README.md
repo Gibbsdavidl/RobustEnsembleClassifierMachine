@@ -3,16 +3,29 @@
 
 ### Robust feature engineering transforms data and trains an ensemble of XGboost classifiers.
 
-The first example demonstrates cross validation, and the second example shows how to train and test on separate files.
+
+See the examples for various use cases.
 
 
+This method is primarily aimed at multi-class prediction, using an ensemble of binary predictors.
+The data is transformed into binary "feature pairs", or "signature pairs" which are continuous 
+features between 0 and 1. Each class gets an ensemble, the ensemble produces a set of scores which 
+are summarized by a selected function, and a final predictor makes a "Best Call" given the scores.
 
-Select some combination of data types and the data will be transformed.
-For example, if both 'binary' and 'ranks' are selected, each feature will
-be transformed into both a binary version and a ranks version.
+The primary decisions to make are:  
+
+(1) What features will be used? Feature selection must be performed prior to classification. 
+
+(2) When making paired features, do you want to name the pairs, or produce all pairs?  
+
+(3) Do you have signatures (sets of features) that you want to make into paired-signatures?
+
+(4) You can choose a set of data transformation types. (i.e. all-pairs and signature-pairs AND ranks)
+
+(5) You can choose how the ensemble is summarized.
 
 
-## Data types available
+## Data transformations available
 
 *original*
 No change to the data.
@@ -52,14 +65,35 @@ pair (1-2, 3-4, 5-6, ...).
 
 
 
+## Summary functions available
+
+*min*
+The smallest score from the ensemble will be sent to the final layer.
+
+*max*
+The largest score from the ensemble will be sent to the final layer.
+
+*median*
+The median score from the ensemble will be sent to the final layer.
+
+*mean*
+The average score from the ensemble will be sent to the final layer.
+
+*majority*
+The sum of scores greater than the median will be sent to the final layer.
+
+*weighted*
+The weighted sum of scores will be sent to the final layer.
+
+
+
 ### Notes
 
 Naming feature-pairs per label often works better than taking all pairs of features.
 
 
 
-
-
+## Cross validation on a data set
 
 ```
 devtools::install_github("gibbsdavidl/robencla")
