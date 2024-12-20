@@ -8,7 +8,7 @@
 library(devtools)
 
 # install to a test dir
-tmp_lib <- "E:/Work/Code/tmp_lib"
+tmp_lib <- "/users/dgibbs/Code/tmp_lib"
 dir.create(tmp_lib)
 devtools::install_local("/users/dgibbs/Code/robencla/", lib = tmp_lib, upgrade = 'never', force = T)
 

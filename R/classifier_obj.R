@@ -421,7 +421,7 @@ Robencla <- R6Class("Robencla",
                         print(paste0('subtype ',li))
 
                         # first create the binarized label
-                        bin_label <- self$binarize_label(label=self$train_label, x=li
+                        bin_label <- self$binarize_label(label=self$train_label, x=li)
                                                          
                         # then create the classifier object
                         ## !! pair list is either a named list or a vector
